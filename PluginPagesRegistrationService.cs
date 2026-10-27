@@ -15,8 +15,11 @@ public sealed class PluginPagesRegistrationService : IHostedService
 {
     private const string PageId = "5ff71e29-a04e-40a8-8a57-0c8f39a616db";
     private const string PluginPagesAssemblyName = "Jellyfin.Plugin.PluginPages";
+    private const string FileTransformationAssemblyName = "Jellyfin.Plugin.FileTransformation";
     private const string PluginPagesInterfaceName = "Jellyfin.Plugin.PluginPages.PluginInterface";
     private const string PageUrl = "/web/configurationpage?name=beeflix-profiles";
+
+    public static bool IsRegistered { get; private set; }
 
     private readonly ILogger<PluginPagesRegistrationService> _logger;
     private MethodInfo? _removePageMethod;
@@ -30,10 +33,19 @@ public sealed class PluginPagesRegistrationService : IHostedService
     {
         try
         {
-            var pluginPagesAssembly = AssemblyLoadContext.All
-                .SelectMany(context => context.Assemblies)
-                .FirstOrDefault(assembly =>
-                    string.Equals(assembly.GetName().Name, PluginPagesAssemblyName, StringComparison.Ordinal));
+            IsRegistered = false;
+            var loadedAssemblies = AssemblyLoadContext.All.SelectMany(context => context.Assemblies).ToArray();
+            var pluginPagesAssembly = loadedAssemblies.FirstOrDefault(assembly =>
+                string.Equals(assembly.GetName().Name, PluginPagesAssemblyName, StringComparison.Ordinal));
+            var fileTransformationLoaded = loadedAssemblies.Any(assembly =>
+                string.Equals(assembly.GetName().Name, FileTransformationAssemblyName, StringComparison.Ordinal));
+
+            if (!fileTransformationLoaded)
+            {
+                _logger.LogWarning(
+                    "File Transformation is not installed or could not be found. Install compatible File Transformation and Plugin Pages plugins to expose BeeFlix Community in the normal Jellyfin user menu.");
+                return Task.CompletedTask;
+            }
 
             var pluginInterface = pluginPagesAssembly?.GetType(
                 PluginPagesInterfaceName,
@@ -64,10 +76,12 @@ public sealed class PluginPagesRegistrationService : IHostedService
             };
 
             registerPage.Invoke(null, new object?[] { payload });
+            IsRegistered = true;
             _logger.LogInformation("Registered BeeFlix Community in the Jellyfin user menu through Plugin Pages.");
         }
         catch (Exception ex)
         {
+            IsRegistered = false;
             _logger.LogWarning(
                 ex,
                 "Could not register BeeFlix Community in the Jellyfin user menu. The admin page remains disabled in the sidebar; check Plugin Pages / File Transformation compatibility.");
@@ -81,6 +95,7 @@ public sealed class PluginPagesRegistrationService : IHostedService
         try
         {
             _removePageMethod?.Invoke(null, new object?[] { PageId });
+            IsRegistered = false;
         }
         catch (Exception ex)
         {
