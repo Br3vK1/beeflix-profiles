@@ -17,7 +17,7 @@ public sealed class PluginPagesRegistrationService : IHostedService
     private const string PluginPagesAssemblyName = "Jellyfin.Plugin.PluginPages";
     private const string FileTransformationAssemblyName = "Jellyfin.Plugin.FileTransformation";
     private const string PluginPagesInterfaceName = "Jellyfin.Plugin.PluginPages.PluginInterface";
-    private const string PageUrl = "/web/configurationpage?name=beeflix-profiles";
+    private const string PageUrl = "/BeeFlixProfiles/page";
 
     public static bool IsRegistered { get; private set; }
 
