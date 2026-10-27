@@ -8,6 +8,14 @@
     "owner": "Br3vK1",
     "versions": [
       {
+        "version": "0.5.0.0",
+        "changelog": "Adds shareable member profile links, profile-wide review statistics, newest-first paginated review history, and direct-link visibility enforcement. Preview release; test on a non-production server first.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/0.5.0.0/BeeFlixProfiles-jellyfin12.zip",
+        "checksum": "504742f5d907482fb6819c2a78e6326c",
+        "timestamp": "2026-10-27T18:52:26.452Z"
+      },
+      {
         "version": "0.4.0.4",
         "changelog": "Fixes Enhanced review-store discovery via the active plugin assembly, member visibility filtering, and profile API error reporting. Preview release; test on a non-production server first.",
         "targetAbi": "12.0.0.0",
