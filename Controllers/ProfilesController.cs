@@ -1,3 +1,4 @@
+using Jellyfin.Data.Enums;
 using System.Collections;
 using System.Reflection;
 using System.Security.Claims;
