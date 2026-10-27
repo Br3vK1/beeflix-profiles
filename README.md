@@ -40,3 +40,8 @@ dotnet build BeeFlix.Profiles.csproj --configuration Release
 5. Add the item/profile integration only after those checks pass.
 
 The prototype intentionally does not modify Jellyfin Enhanced, BeeFlix's working CSS, or the existing JS injector.
+
+
+## Packaging note
+
+The build workflow places `BeeFlix.Profiles.dll` and `meta.json` at the root of the install ZIP so Jellyfin can extract them directly into the plugin's versioned directory.
