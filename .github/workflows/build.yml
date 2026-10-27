@@ -1,0 +1,44 @@
+name: Build BeeFlix Profiles
+on:
+  push:
+    branches: [main, "prototype/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore BeeFlix.Profiles.csproj
+      - name: Build
+        run: dotnet build BeeFlix.Profiles.csproj --configuration Release --no-restore
+      - name: Publish
+        run: dotnet publish BeeFlix.Profiles.csproj --configuration Release --no-build --output ./publish
+      - name: Assemble install folder
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ./package/BeeFlixProfiles
+          cp ./publish/BeeFlix.Profiles.dll ./package/BeeFlixProfiles/
+          cat > ./package/BeeFlixProfiles/meta.json <<'EOF'
+          {
+            "guid": "db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21",
+            "name": "BeeFlix Profiles",
+            "version": "0.4.0.0",
+            "targetAbi": "12.0.0.0"
+          }
+          EOF
+          (cd ./package && zip -r ../BeeFlixProfiles-jellyfin12.zip BeeFlixProfiles)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BeeFlixProfiles-jellyfin12
+          path: BeeFlixProfiles-jellyfin12.zip
+          if-no-files-found: error
