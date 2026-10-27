@@ -5,7 +5,7 @@
     <RootNamespace>BeeFlix.Profiles</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>0.4.0.2</Version>
+    <Version>0.4.0.3</Version>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
