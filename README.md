@@ -18,7 +18,11 @@ GitHub repository visibility must be **public** for Jellyfin to fetch the manife
 
 ## First preview release
 
-1. In GitHub, open **Releases → Draft a new release**.
+The first release tag already exists. To finish publishing its downloadable ZIP and create the manifest, open [Actions → Publish BeeFlix Profiles](https://github.com/Br3vK1/beeflix-profiles/actions/workflows/release.yml), choose **Run workflow**, select branch `main`, enter release tag `0.4.0.0`, and run it. When it finishes successfully, `manifest.json` should exist on `main` and the release should have a `BeeFlixProfiles-jellyfin12.zip` asset.
+
+For future releases:
+
+1. Open **Releases → Draft a new release**.
 2. Create tag `v0.4.0.0`, targeting branch `prototype/v0.4`.
 3. Publish the release. The `Publish BeeFlix Profiles` workflow builds the plugin for Jellyfin 12 / .NET 10, uploads `BeeFlixProfiles-jellyfin12.zip`, calculates its MD5 checksum, and writes the feed to `main/manifest.json`.
 4. After the workflow finishes successfully and the repository is public, copy the manifest URL above.
