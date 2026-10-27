@@ -27,6 +27,39 @@ public sealed class ProfilesController : ControllerBase
     [HttpGet("health")]
     public IActionResult Health() => Ok(new { plugin = "BeeFlix Profiles", version = "0.4.0", enhancedIntegration = FindReviewStore() != null });
 
+    [HttpGet("users")]
+    public IActionResult GetMembers()
+    {
+        if (Plugin.Instance is null || !Plugin.Instance.Configuration.Enabled) return NotFound();
+
+        var viewerId = GetViewerId();
+        if (viewerId == Guid.Empty) return Unauthorized();
+        var viewer = _users.GetUserById(viewerId);
+        if (viewer is null) return Unauthorized();
+        var isAdmin = SafelyHasPermission(viewer, "IsAdministrator");
+
+        try
+        {
+            var members = _users.GetUsers()
+                .Where(user => user is not null)
+                .Where(user => isAdmin || user.Id == viewerId || !IsHiddenOrDisabled(user))
+                .Select(user => new
+                {
+                    userId = user.Id.ToString("N"),
+                    userName = user.Username
+                })
+                .OrderBy(user => user.userName, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            return Ok(new { members });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to list BeeFlix profile members");
+            return StatusCode(503, new { message = "Could not load the member directory. Check the Jellyfin server logs." });
+        }
+    }
+
     [HttpGet("users/{userId}/reviews")]
     public IActionResult GetUserReviews(string userId, [FromQuery] int limit = 50, [FromQuery] int offset = 0)
     {
