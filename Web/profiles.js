@@ -49,7 +49,7 @@
       if (body) {
         try {
           const parsed = JSON.parse(body);
-          body = parsed.message || parsed.error || body;
+          body = [parsed.message || parsed.error, parsed.detail].filter(Boolean).join(' — ') || body;
         } catch (_) {
           // The response body was text, not JSON.
         }
