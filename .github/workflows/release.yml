@@ -6,15 +6,15 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: "Release version to publish (example: 0.4.0.1)"
+        description: "Release version to publish (example: 0.5.0.0)"
         required: true
         type: string
-        default: "0.4.0.4"
+        default: "0.5.0.0"
       source_ref:
         description: "Branch or commit to build for a manual preview release"
         required: true
         type: string
-        default: "fix/member-visibility-review-errors-v0.4.3"
+        default: "feature/shareable-member-profiles-v0.5.0"
 
 permissions:
   contents: write
@@ -72,7 +72,7 @@ jobs:
             gh release create "$TAG_NAME" ./BeeFlixProfiles-jellyfin12.zip \
               --target "$SOURCE_REF" \
               --title "BeeFlix Profiles $TAG_NAME Preview" \
-              --notes "Fixes cross-plugin review-store discovery, member visibility filtering, and profile API error reporting. Preview build; validate on a test instance first."
+              --notes "Adds shareable individual member profiles, profile-wide review statistics, newest-first paginated reviews, and visibility enforcement for direct profile URLs. Preview build; validate on a test instance first."
           fi
       - name: Check out manifest branch
         uses: actions/checkout@v4
@@ -94,7 +94,7 @@ jobs:
           const releaseUrl = process.env.RELEASE_URL;
           const entryVersion = {
             version,
-            changelog: 'Fixes Enhanced review-store discovery via the active plugin assembly, member visibility filtering, and profile API error reporting. Preview release; test on a non-production server first.',
+            changelog: 'Adds shareable member profile links, profile-wide review statistics, newest-first paginated review history, and direct-link visibility enforcement. Preview release; test on a non-production server first.',
             targetAbi: '12.0.0.0',
             sourceUrl: releaseUrl,
             checksum,
