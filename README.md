@@ -1,26 +1,43 @@
 # BeeFlix Profiles — shareable member profiles
 
-A lightweight Jellyfin 12 plugin that reuses the reviews and ratings already stored by Jellyfin Enhanced. BeeFlix Profiles does not create a duplicate ratings database and does not modify Enhanced's review data.
+BeeFlix Profiles is a Jellyfin 12 plugin for community profiles built on the reviews and ratings already stored by Jellyfin Enhanced. It does not create a duplicate ratings database or modify Enhanced's review data.
 
-**Preview release:** validate on a test Jellyfin instance before rolling out broadly. Build success does not prove runtime behavior or privacy parity for every Enhanced version.
+**Preview release:** the build is validated by CI, but the live navigation, metadata matching, and privacy behavior still need to be smoke-tested against the target BeeFlix server.
 
-## Current candidate
+## Candidate release
 
 Source branch: `feature/shareable-member-profiles-v0.5.0`
 
 Planned version: `0.5.0.0`
 
-This milestone adds:
-- Shareable links that open a specific member's profile directly.
-- Permission-aware handling for profiles that are not visible to the signed-in viewer.
-- Profile-wide review count, rated review count, and average rating (calculated across all visible reviews, not just the first page).
-- Newest-first review history, with a Load more button for older entries.
-- A profile share button, responsive layout, and links from TMDB IDs to the matching TMDB title page.
-- Existing member search and avatar picker retained.
+### Included in this milestone
 
-## How profile links work
+- A clearer BeeFlix visual language using honey-gold accents, layered surfaces, responsive layouts, and better spacing.
+- A normal user-facing **BeeFlix Community** menu entry through Plugin Pages.
+- Shareable member links that open the chosen profile for signed-in users who are allowed to see that member.
+- Server-side protection so a copied or guessed profile URL does not bypass member visibility checks.
+- Profile-wide review count, rated review count, and average rating across all visible reviews.
+- Newest-first review history with a **Load more reviews** control.
+- Local Jellyfin library lookup for review TMDB IDs, so cards can show a real title, year, poster, and a link to the title in Jellyfin.
+- A TMDB lookup link and clear fallback when the media item cannot be matched in the local Jellyfin library.
+- Searchable member picker and Jellyfin avatars retained from the earlier preview.
 
-Open BeeFlix Community from Jellyfin. Choose a member and use **Share profile link**. The link opens the same profile view on your BeeFlix Jellyfin server for signed-in users who are allowed to view that member. Profiles are not public to the internet without signing into Jellyfin, and a link does not bypass the plugin's member visibility checks.
+## Required for the end-user menu
+
+The user-facing menu entry uses these compatible Jellyfin 12.2 plugins:
+
+- [Plugin Pages](https://github.com/IAmParadox27/jellyfin-plugin-pages/releases) — provides registered pages inside Jellyfin's normal user menu.
+- [File Transformation](https://github.com/IAmParadox27/jellyfin-plugin-file-transformation/releases) — required by Plugin Pages to inject its menu integration into Jellyfin Web.
+
+The upstream `3.0.2.0` releases include `12.2.0` packages. Install compatible builds of both plugins, then restart Jellyfin once after the combined upgrade. If either plugin is missing, BeeFlix Profiles logs a warning and the user-facing menu link will not appear.
+
+## Privacy and review data
+
+- Profiles require an authenticated Jellyfin session.
+- Users can only open members returned by the directory's visibility rules, and the review API independently enforces the same hidden/disabled-member check for direct URLs.
+- Jellyfin Enhanced remains the source of truth for reviews and ratings.
+- Movie/show names and posters are looked up locally by TMDB provider ID. If a review no longer matches a library item, the UI shows a title-unavailable fallback with a TMDB lookup link rather than pretending the ID is a title.
+- Profile statistics use the set of reviews visible to that viewer.
 
 ## Native Jellyfin plugin repository
 
@@ -28,20 +45,18 @@ Manifest URL:
 
 `https://raw.githubusercontent.com/Br3vK1/beeflix-profiles/main/manifest.json`
 
-The repository is public so Jellyfin can fetch the manifest and release ZIP without authentication.
-
 ## Publish after validation
 
-Open [Actions → Publish BeeFlix Profiles](https://github.com/Br3vK1/beeflix-profiles/actions/workflows/release.yml), choose **Run workflow**, select branch `main`, set the version to `0.5.0.0`, and use source branch `feature/shareable-member-profiles-v0.5.0`. The workflow builds the source, creates a release ZIP, and updates the plugin manifest.
+Open [Actions → Publish BeeFlix Profiles](https://github.com/Br3vK1/beeflix-profiles/actions/workflows/release.yml), choose **Run workflow**, select branch `main`, use version `0.5.0.0`, and source branch `feature/shareable-member-profiles-v0.5.0`.
 
-Do not publish until the branch's Build BeeFlix Profiles workflow passes and the share-link flow has been tested on the target Jellyfin version.
+Do not publish until the branch's **Build BeeFlix Profiles** workflow passes and the user menu, shared profile URL, metadata matching, and member visibility have been tested on the target Jellyfin 12.2 instance.
 
 ## Not included yet
 
 - Click-through profile links from the existing BeeFlix review carousel.
-- Proper movie/show titles and posters resolved from the local Jellyfin library; reviews still show TMDB IDs and link out to TMDB.
-- Genre/taste summaries, recent activity beyond reviews, badges, and milestones.
-- Full automated privacy-parity tests against every Jellyfin Enhanced version.
+- Remote TMDB metadata fetch for reviewed titles that are not in the local Jellyfin library.
+- Genre/taste summaries, broader recent activity, badges, and milestones.
+- Automated privacy-parity tests against every Jellyfin Enhanced version.
 
 ## Build locally
 
@@ -50,4 +65,4 @@ dotnet restore BeeFlix.Profiles.csproj
 dotnet build BeeFlix.Profiles.csproj --configuration Release
 ```
 
-The build workflow also runs `node --check Web/profiles.js` and packages `BeeFlixProfiles-jellyfin12.zip` for Jellyfin 12 / .NET 10.
+The GitHub Actions build also checks `Web/profiles.js` syntax and packages `BeeFlixProfiles-jellyfin12.zip` for Jellyfin 12 / .NET 10.
