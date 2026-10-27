@@ -8,6 +8,14 @@
     "owner": "Br3vK1",
     "versions": [
       {
+        "version": "0.4.0.3",
+        "changelog": "Fixes member visibility filtering and displays useful server errors when reviews fail to load. Preview release; test on a non-production server first.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/0.4.0.3/BeeFlixProfiles-jellyfin12.zip",
+        "checksum": "92c0211ea1eceb14bdd3446808f5b6ab",
+        "timestamp": "2026-10-27T16:56:14.558Z"
+      },
+      {
         "version": "0.4.0.2",
         "changelog": "Adds a searchable member directory with Jellyfin avatars. Preview release; test on a non-production server first.",
         "targetAbi": "12.0.0.0",
