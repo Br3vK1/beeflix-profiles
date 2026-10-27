@@ -18,6 +18,7 @@ public sealed class ProfilesController : ControllerBase
     private readonly IUserManager _users;
     private readonly IPluginManager _pluginManager;
     private readonly ILogger<ProfilesController> _logger;
+    private string? _reviewStoreDiagnostic;
 
     public ProfilesController(IServiceProvider services, IUserManager users, IPluginManager pluginManager, ILogger<ProfilesController> logger)
     {
@@ -79,7 +80,11 @@ public sealed class ProfilesController : ControllerBase
 
         var store = FindReviewStore();
         if (store is null)
-            return StatusCode(503, new { message = "Jellyfin Enhanced review store was not found. Confirm Enhanced is installed and restart Jellyfin." });
+            return StatusCode(503, new
+            {
+                message = "Could not access the Jellyfin Enhanced review store.",
+                detail = _reviewStoreDiagnostic ?? "The integration did not return a review store. Check Jellyfin logs."
+            });
 
         try
         {
@@ -172,6 +177,7 @@ public sealed class ProfilesController : ControllerBase
 
     private object? FindReviewStore()
     {
+        _reviewStoreDiagnostic = null;
         try
         {
             // Resolve the type from the actual loaded Enhanced plugin instance, not
@@ -181,6 +187,7 @@ public sealed class ProfilesController : ControllerBase
             var enhanced = FindEnhancedPluginInstance();
             if (enhanced is null)
             {
+                _reviewStoreDiagnostic = "IPluginManager did not expose an active Jellyfin Enhanced plugin instance.";
                 _logger.LogWarning("BeeFlix Profiles could not find an active Jellyfin Enhanced plugin instance.");
                 return null;
             }
@@ -191,6 +198,7 @@ public sealed class ProfilesController : ControllerBase
                 ignoreCase: false);
             if (managerType is null)
             {
+                _reviewStoreDiagnostic = "The active Enhanced assembly did not contain UserConfigurationManager.";
                 _logger.LogWarning("Jellyfin Enhanced was found, but its UserConfigurationManager type was not present in the same plugin assembly.");
                 return null;
             }
@@ -198,6 +206,7 @@ public sealed class ProfilesController : ControllerBase
             var manager = _services.GetService(managerType);
             if (manager is null)
             {
+                _reviewStoreDiagnostic = "UserConfigurationManager was found in the active Enhanced assembly but could not be resolved from Jellyfin's service provider. A service registration/load-context mismatch remains.";
                 _logger.LogWarning("Jellyfin Enhanced UserConfigurationManager type was found ({ManagerType}), but it was not resolvable from the current Jellyfin service provider.", managerType.FullName);
                 return null;
             }
@@ -205,19 +214,26 @@ public sealed class ProfilesController : ControllerBase
             var method = managerType.GetMethod("GetAllReviews", BindingFlags.Public | BindingFlags.Instance);
             if (method is null)
             {
+                _reviewStoreDiagnostic = "UserConfigurationManager was resolved, but its public GetAllReviews() method was not found.";
                 _logger.LogWarning("Jellyfin Enhanced UserConfigurationManager is registered, but its public GetAllReviews() method was not found.");
                 return null;
             }
 
-            return method.Invoke(manager, null);
+            var store = method.Invoke(manager, null);
+            if (store is null)
+                _reviewStoreDiagnostic = "GetAllReviews() was invoked successfully but returned null.";
+            return store;
         }
         catch (TargetInvocationException ex)
         {
-            _logger.LogWarning(ex.InnerException ?? ex, "Jellyfin Enhanced GetAllReviews() call failed.");
+            var inner = ex.InnerException ?? ex;
+            _reviewStoreDiagnostic = $"Enhanced GetAllReviews() threw {inner.GetType().Name}: {inner.Message}";
+            _logger.LogWarning(inner, "Jellyfin Enhanced GetAllReviews() call failed.");
             return null;
         }
         catch (Exception ex)
         {
+            _reviewStoreDiagnostic = $"Review-store discovery threw {ex.GetType().Name}: {ex.Message}";
             _logger.LogWarning(ex, "Enhanced review store discovery failed.");
             return null;
         }
