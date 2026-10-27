@@ -206,37 +206,96 @@
     const article = document.createElement('article');
     article.className = 'bf-review';
 
+    const posterFrame = document.createElement('div');
+    posterFrame.className = 'bf-poster-frame';
+    posterFrame.setAttribute('aria-hidden', 'true');
+
+    const posterPlaceholder = document.createElement('div');
+    posterPlaceholder.className = 'bf-poster-placeholder';
+    posterPlaceholder.innerHTML = '<span class="material-icons">movie</span>';
+    posterFrame.appendChild(posterPlaceholder);
+
+    const itemId = String(review.jellyfinItemId || '');
+    if (/^[0-9a-f]{32}$/i.test(itemId)) {
+      const poster = document.createElement('img');
+      poster.className = 'bf-review-poster';
+      poster.loading = 'lazy';
+      poster.alt = '';
+      poster.src = ApiClient.getUrl(`/Items/${encodeURIComponent(itemId)}/Images/Primary?width=280&quality=85`);
+      poster.onerror = () => poster.remove();
+      poster.onload = () => posterPlaceholder.remove();
+      posterFrame.appendChild(poster);
+    }
+
+    const details = document.createElement('div');
+    details.className = 'bf-review-details';
+
     const top = document.createElement('div');
     top.className = 'bf-review-top';
+
     const mediaType = String(review.mediaType || 'media');
     const tmdbId = String(review.tmdbId || '');
     const isShow = /tv|series|show|episode/i.test(mediaType);
     const title = document.createElement('a');
     title.className = 'bf-review-title';
-    title.textContent = tmdbId ? `${mediaType.toUpperCase()} · TMDB ${tmdbId}` : mediaType.toUpperCase();
-    if (tmdbId && /^\d+$/.test(tmdbId)) {
+    title.textContent = review.title
+      ? String(review.title)
+      : 'Title unavailable';
+    if (/^[0-9a-f]{32}$/i.test(itemId)) {
+      title.href = `#/details?id=${encodeURIComponent(itemId)}`;
+      title.title = 'Open this title in Jellyfin';
+    } else if (/^\d+$/.test(tmdbId)) {
       title.href = `https://www.themoviedb.org/${isShow ? 'tv' : 'movie'}/${encodeURIComponent(tmdbId)}`;
       title.target = '_blank';
       title.rel = 'noopener noreferrer';
+      title.title = 'Look up this title on TMDB';
     } else {
       title.removeAttribute('href');
     }
-    top.appendChild(title);
 
+    const rating = document.createElement('span');
+    rating.className = 'bf-rating';
     if (review.rating != null && Number.isFinite(Number(review.rating))) {
-      const rating = document.createElement('span');
-      rating.className = 'bf-rating';
       rating.textContent = `★ ${Number(review.rating).toFixed(1).replace(/\.0$/, '')}/5`;
-      top.appendChild(rating);
+    } else {
+      rating.textContent = 'Not rated';
+      rating.classList.add('bf-rating-muted');
+    }
+    top.append(title, rating);
+
+    const metadata = document.createElement('div');
+    metadata.className = 'bf-review-meta';
+    const kind = document.createElement('span');
+    kind.className = 'bf-kind-pill';
+    kind.textContent = isShow ? 'SERIES' : 'MOVIE';
+    metadata.appendChild(kind);
+
+    if (review.year != null && Number(review.year) > 1800) {
+      const year = document.createElement('span');
+      year.textContent = String(review.year);
+      metadata.appendChild(year);
+    }
+
+    if (!review.title && /^\d+$/.test(tmdbId)) {
+      const lookup = document.createElement('a');
+      lookup.className = 'bf-tmdb-link';
+      lookup.href = `https://www.themoviedb.org/${isShow ? 'tv' : 'movie'}/${encodeURIComponent(tmdbId)}`;
+      lookup.target = '_blank';
+      lookup.rel = 'noopener noreferrer';
+      lookup.textContent = `Find on TMDB · ${tmdbId}`;
+      metadata.appendChild(lookup);
     }
 
     const body = document.createElement('p');
     body.className = 'bf-review-content';
     body.textContent = review.content || 'Rated without a written review';
+
     const date = document.createElement('small');
-    date.className = 'bf-muted';
+    date.className = 'bf-review-date';
     date.textContent = formatDate(review.updatedAt || review.createdAt);
-    article.append(top, body, date);
+
+    details.append(top, metadata, body, date);
+    article.append(posterFrame, details);
     return article;
   }
 
