@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Reflection;
 using System.Security.Claims;
+using MediaBrowser.Common.Plugins;
 using MediaBrowser.Controller.Library;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,12 +16,14 @@ public sealed class ProfilesController : ControllerBase
 {
     private readonly IServiceProvider _services;
     private readonly IUserManager _users;
+    private readonly IPluginManager _pluginManager;
     private readonly ILogger<ProfilesController> _logger;
 
-    public ProfilesController(IServiceProvider services, IUserManager users, ILogger<ProfilesController> logger)
+    public ProfilesController(IServiceProvider services, IUserManager users, IPluginManager pluginManager, ILogger<ProfilesController> logger)
     {
         _services = services;
         _users = users;
+        _pluginManager = pluginManager;
         _logger = logger;
     }
 
@@ -126,11 +129,8 @@ public sealed class ProfilesController : ControllerBase
     {
         try
         {
-            var enhancedType = AppDomain.CurrentDomain.GetAssemblies()
-                .Select(a => a.GetType("Jellyfin.Plugin.JellyfinEnhanced.JellyfinEnhanced", false))
-                .FirstOrDefault(t => t is not null);
-            var instance = enhancedType?.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static)?.GetValue(null);
-            var config = enhancedType?.GetProperty("Configuration")?.GetValue(instance);
+            var enhanced = FindEnhancedPluginInstance();
+            var config = enhanced?.GetType().GetProperty("Configuration", BindingFlags.Public | BindingFlags.Instance)?.GetValue(enhanced);
             var hideHidden = config?.GetType().GetProperty("HideReviewsFromHiddenUsers")?.GetValue(config) is bool h ? h : true;
             var hideDisabled = config?.GetType().GetProperty("HideReviewsFromDisabledUsers")?.GetValue(config) is bool d ? d : true;
             return (hideHidden && HasPermissionNamed(author, "IsHidden")) ||
@@ -174,14 +174,64 @@ public sealed class ProfilesController : ControllerBase
     {
         try
         {
-            var managerType = AppDomain.CurrentDomain.GetAssemblies()
-                .Select(a => a.GetType("Jellyfin.Plugin.JellyfinEnhanced.Configuration.UserConfigurationManager", false))
-                .FirstOrDefault(t => t is not null);
-            if (managerType is null) return null;
+            // Resolve the type from the actual loaded Enhanced plugin instance, not
+            // from AppDomain.GetAssemblies(). Enhanced is loaded in its own
+            // AssemblyLoadContext; enumeration can select a duplicate/stale type
+            // identity that is not the one registered in Jellyfin's service provider.
+            var enhanced = FindEnhancedPluginInstance();
+            if (enhanced is null)
+            {
+                _logger.LogWarning("BeeFlix Profiles could not find an active Jellyfin Enhanced plugin instance.");
+                return null;
+            }
+
+            var managerType = enhanced.GetType().Assembly.GetType(
+                "Jellyfin.Plugin.JellyfinEnhanced.Configuration.UserConfigurationManager",
+                throwOnError: false,
+                ignoreCase: false);
+            if (managerType is null)
+            {
+                _logger.LogWarning("Jellyfin Enhanced was found, but its UserConfigurationManager type was not present in the same plugin assembly.");
+                return null;
+            }
+
             var manager = _services.GetService(managerType);
-            return manager?.GetType().GetMethod("GetAllReviews", BindingFlags.Public | BindingFlags.Instance)?.Invoke(manager, null);
+            if (manager is null)
+            {
+                _logger.LogWarning("Jellyfin Enhanced UserConfigurationManager type was found ({ManagerType}), but it was not resolvable from the current Jellyfin service provider.", managerType.FullName);
+                return null;
+            }
+
+            var method = managerType.GetMethod("GetAllReviews", BindingFlags.Public | BindingFlags.Instance);
+            if (method is null)
+            {
+                _logger.LogWarning("Jellyfin Enhanced UserConfigurationManager is registered, but its public GetAllReviews() method was not found.");
+                return null;
+            }
+
+            return method.Invoke(manager, null);
         }
-        catch (Exception ex) { _logger.LogWarning(ex, "Enhanced review store discovery failed"); return null; }
+        catch (TargetInvocationException ex)
+        {
+            _logger.LogWarning(ex.InnerException ?? ex, "Jellyfin Enhanced GetAllReviews() call failed.");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Enhanced review store discovery failed.");
+            return null;
+        }
+    }
+
+    private MediaBrowser.Common.Plugins.IPlugin? FindEnhancedPluginInstance()
+    {
+        return _pluginManager.Plugins
+            .Where(plugin => plugin.Instance is not null)
+            .Select(plugin => plugin.Instance)
+            .FirstOrDefault(plugin =>
+                plugin is not null
+                && (plugin.Id == Guid.Parse("f69e946a-4b3c-4e9a-8f0a-8d7c1b2c4d9b")
+                    || string.Equals(plugin.Name, "Jellyfin Enhanced", StringComparison.OrdinalIgnoreCase)));
     }
 
     private Guid GetViewerId()
