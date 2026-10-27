@@ -131,7 +131,7 @@ public sealed class ProfilesController : ControllerBase
 
             var ratedValues = rows
                 .Where(review => review.rating is > 0)
-                .Select(review => review.Rating!.Value)
+                .Select(review => review.rating!.Value)
                 .ToArray();
             var stats = new
             {
