@@ -33,6 +33,35 @@ public sealed class ProfilesController : ControllerBase
         _logger = logger;
     }
 
+    [HttpGet("page")]
+    public IActionResult GetProfilePage()
+    {
+        var stream = typeof(Plugin).Assembly.GetManifestResourceStream("BeeFlix.Profiles.Web.profiles.html");
+        if (stream is null)
+        {
+            _logger.LogError("The embedded BeeFlix Profiles page was not found.");
+            return NotFound();
+        }
+
+        return File(stream, "text/html; charset=utf-8");
+    }
+
+    // The script contains only client-side UI code and no user data. It is safe to serve
+    // anonymously; all profile data remains behind this controller's authenticated API.
+    [HttpGet("profiles.js")]
+    [AllowAnonymous]
+    public IActionResult GetProfileScript()
+    {
+        var stream = typeof(Plugin).Assembly.GetManifestResourceStream("BeeFlix.Profiles.Web.profiles.js");
+        if (stream is null)
+        {
+            _logger.LogError("The embedded BeeFlix Profiles JavaScript was not found.");
+            return NotFound();
+        }
+
+        return File(stream, "application/javascript; charset=utf-8");
+    }
+
     [HttpGet("health")]
     public IActionResult Health() => Ok(new { plugin = "BeeFlix Profiles", version = "0.5.0.0", enhancedIntegration = FindReviewStore() != null });
 
