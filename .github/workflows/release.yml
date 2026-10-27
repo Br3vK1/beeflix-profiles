@@ -38,7 +38,7 @@ jobs:
           dotnet publish BeeFlix.Profiles.csproj --configuration Release --output ./publish -p:Version="$VERSION" -p:AssemblyVersion="$VERSION" -p:FileVersion="$VERSION"
       - name: Package plugin
         env:
-          VERSION: ${{ github.event.release.tag_name }}
+          VERSION: ${{ github.event.release.tag_name || inputs.tag_name }}
         run: |
           set -euo pipefail
           VERSION="${VERSION#v}"
@@ -67,7 +67,7 @@ jobs:
           path: manifest-repo
       - name: Update plugin repository manifest
         env:
-          TAG_NAME: ${{ github.event.release.tag_name }}
+          TAG_NAME: ${{ github.event.release.tag_name || inputs.tag_name }}
           RELEASE_URL: https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name || inputs.tag_name }}/BeeFlixProfiles-jellyfin12.zip
         run: |
           node <<'NODE'
@@ -108,7 +108,7 @@ jobs:
         working-directory: manifest-repo
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG_NAME: ${{ github.event.release.tag_name }}
+          TAG_NAME: ${{ github.event.release.tag_name || inputs.tag_name }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
