@@ -1,4 +1,4 @@
-using MediaBrowser.Common.Net;
+using Newtonsoft.Json.Linq;
 
 namespace BeeFlix.Profiles;
 
@@ -9,9 +9,9 @@ namespace BeeFlix.Profiles;
 /// </summary>
 public static class WebTransformation
 {
-    public static string IndexHtml(PatchRequestPayload content)
+    public static string IndexHtml(JObject content)
     {
-        var html = content.Contents ?? string.Empty;
+        var html = content.Value<string>("contents") ?? string.Empty;
         if (html.Length == 0 || html.Contains("plugin=\"BeeFlix.Profiles\"", StringComparison.OrdinalIgnoreCase))
         {
             return html;
