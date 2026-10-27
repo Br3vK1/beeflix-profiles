@@ -8,6 +8,14 @@
     "owner": "Br3vK1",
     "versions": [
       {
+        "version": "0.5.1.0",
+        "changelog": "PREVIEW: Adds the user-facing BeeFlix Community page, shareable member profiles, profile statistics, paginated review history, local Jellyfin title/poster resolution, and responsive honey-accent styling. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.5.1.0-preview/BeeFlixProfiles-jellyfin12.zip",
+        "checksum": "da7303a9bfc38988595bb2e08c83f9b5",
+        "timestamp": "2026-10-27T20:47:41.891Z"
+      },
+      {
         "version": "0.5.0.0",
         "changelog": "Adds shareable member profile links, profile-wide review statistics, newest-first paginated review history, and direct-link visibility enforcement. Preview release; test on a non-production server first.",
         "targetAbi": "12.0.0.0",
