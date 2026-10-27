@@ -1,4 +1,3 @@
-using MediaBrowser.Controller.Configuration;
 using Newtonsoft.Json.Linq;
 
 namespace BeeFlix.Profiles;
@@ -10,8 +9,6 @@ namespace BeeFlix.Profiles;
 /// </summary>
 public static class WebTransformation
 {
-    public static IServerConfigurationManager? ServerConfigurationManager { get; set; }
-
     public static string IndexHtml(JObject content)
     {
         var html = content.Value<string>("contents") ?? string.Empty;
@@ -20,9 +17,7 @@ public static class WebTransformation
             return html;
         }
 
-        var baseUrl = ServerConfigurationManager?.GetNetworkConfiguration().BaseUrl;
-        var rootPath = string.IsNullOrWhiteSpace(baseUrl) ? string.Empty : "/" + baseUrl.Trim('/');
-        var script = $"<script type=\"text/javascript\" plugin=\"BeeFlix.Profiles\" src=\"{rootPath}/BeeFlixProfiles/loader.js\" defer></script>";
+        var script = "<script type=\"text/javascript\" plugin=\"BeeFlix.Profiles\" src=\"/BeeFlixProfiles/loader.js\" defer></script>";
         return html.Replace("</body>", $"{script}</body>", StringComparison.OrdinalIgnoreCase);
     }
 }

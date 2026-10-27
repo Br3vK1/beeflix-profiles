@@ -1,6 +1,5 @@
 using System.Reflection;
 using System.Runtime.Loader;
-using MediaBrowser.Controller.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -25,16 +24,12 @@ public sealed class PluginPagesRegistrationService : IHostedService
     public static bool IsRegistered { get; private set; }
 
     private readonly ILogger<PluginPagesRegistrationService> _logger;
-    private readonly IServerConfigurationManager _serverConfigurationManager;
     private MethodInfo? _removePageMethod;
     private MethodInfo? _removeTransformationMethod;
 
-    public PluginPagesRegistrationService(
-        ILogger<PluginPagesRegistrationService> logger,
-        IServerConfigurationManager serverConfigurationManager)
+    public PluginPagesRegistrationService(ILogger<PluginPagesRegistrationService> logger)
     {
         _logger = logger;
-        _serverConfigurationManager = serverConfigurationManager;
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -42,7 +37,6 @@ public sealed class PluginPagesRegistrationService : IHostedService
         try
         {
             IsRegistered = false;
-            WebTransformation.ServerConfigurationManager = _serverConfigurationManager;
             var loadedAssemblies = AssemblyLoadContext.All.SelectMany(context => context.Assemblies).ToArray();
             var pluginPagesAssembly = loadedAssemblies.FirstOrDefault(assembly =>
                 string.Equals(assembly.GetName().Name, PluginPagesAssemblyName, StringComparison.Ordinal));
