@@ -147,13 +147,27 @@ public sealed class ProfilesController : ControllerBase
 
     private static bool HasPermissionNamed(object subject, string permissionName)
     {
-        var method = subject.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
-            .FirstOrDefault(m => m.Name == "HasPermission" && m.GetParameters().Length == 1
-                && m.GetParameters()[0].ParameterType.IsEnum);
-        if (method is null) throw new MissingMethodException(subject.GetType().FullName, "HasPermission(enum)");
-        var enumType = method.GetParameters()[0].ParameterType;
-        var permission = Enum.Parse(enumType, permissionName, ignoreCase: false);
-        return method.Invoke(subject, new[] { permission }) is bool result && result;
+        // Jellyfin's User.HasPermission(...) is an extension method, not an instance
+        // method. Reflecting for an instance method always fails and was causing the
+        // fail-closed path to hide every other member. Read the public Permissions
+        // collection instead so this works across Jellyfin 12 builds.
+        if (subject.GetType().GetProperty("Permissions", BindingFlags.Public | BindingFlags.Instance)?.GetValue(subject)
+            is not IEnumerable permissions)
+        {
+            return false;
+        }
+
+        foreach (var permission in permissions)
+        {
+            if (permission is null) continue;
+            var kind = permission.GetType().GetProperty("Kind", BindingFlags.Public | BindingFlags.Instance)?.GetValue(permission)?.ToString();
+            if (!string.Equals(kind, permissionName, StringComparison.OrdinalIgnoreCase)) continue;
+
+            return permission.GetType().GetProperty("Value", BindingFlags.Public | BindingFlags.Instance)?.GetValue(permission) is bool granted
+                && granted;
+        }
+
+        return false;
     }
 
     private object? FindReviewStore()
