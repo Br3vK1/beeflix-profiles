@@ -1,7 +1,7 @@
 name: Build BeeFlix Profiles
 on:
   push:
-    branches: [main, "prototype/**", "fix/**"]
+    branches: [main, "prototype/**", "fix/**", "feature/**"]
   pull_request:
   workflow_dispatch:
 
