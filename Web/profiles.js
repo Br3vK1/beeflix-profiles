@@ -29,6 +29,45 @@
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[c]));
 
+  async function describeApiError(error) {
+    const response = error && typeof error.status === 'number'
+      ? error
+      : error?.response && typeof error.response.status === 'number'
+        ? error.response
+        : null;
+
+    if (response) {
+      let body = '';
+      try {
+        const readable = typeof response.clone === 'function' ? response.clone() : response;
+        if (typeof readable.text === 'function') body = (await readable.text()).trim();
+        else body = String(response.responseText || response.data || '').trim();
+      } catch (_) {
+        body = '';
+      }
+
+      if (body) {
+        try {
+          const parsed = JSON.parse(body);
+          body = parsed.message || parsed.error || body;
+        } catch (_) {
+          // The response body was text, not JSON.
+        }
+      }
+
+      const statusLabel = [response.status, response.statusText].filter(Boolean).join(' ');
+      return body ? `HTTP ${statusLabel}: ${body}` : `HTTP ${statusLabel}`;
+    }
+
+    if (typeof error === 'string') return error;
+    if (error?.message && error.message !== '[object Response]') return error.message;
+    try {
+      const serialized = JSON.stringify(error);
+      if (serialized && serialized !== '{}') return serialized;
+    } catch (_) {}
+    return String(error);
+  }
+
   let members = [];
   let selectedMember = null;
   let isMemberListOpen = false;
@@ -130,7 +169,8 @@
     } catch (error) {
       console.error('[BeeFlix Profiles] Failed to load member directory:', error);
       selectedName.textContent = 'Could not load members';
-      status.textContent = `Could not load the member directory: ${error?.message || error}. Check the plugin version and server logs.`;
+      const reason = await describeApiError(error);
+      status.textContent = `Could not load the member directory: ${reason}. Check the plugin version and server logs.`;
       status.classList.add('bf-error');
       memberList.replaceChildren();
       const empty = document.createElement('div');
@@ -220,7 +260,8 @@
       status.textContent = `Loaded ${reviews.length} of ${data.total ?? reviews.length} visible reviews for ${member.userName}.`;
     } catch (error) {
       console.error('[BeeFlix Profiles] Failed to load profile:', error);
-      status.textContent = `Could not load ${member.userName}’s profile: ${error?.message || error}. Check the plugin version and server logs.`;
+      const reason = await describeApiError(error);
+      status.textContent = `Could not load ${member.userName}’s profile: ${reason}. Check the plugin version and server logs.`;
       status.classList.add('bf-error');
     }
   }
