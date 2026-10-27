@@ -1,14 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>BeeFlix Profiles</title>
-</head>
-<body>
-    <div id="BeeFlixProfilesPage" data-role="page" class="page type-interior pluginConfigurationPage">
-        <div data-role="content">
-            <div class="content-primary">
+<div id="BeeFlixProfilesPage" class="bf-page-shell">
+
                 <style>
                     #BeeFlixProfilesPage {
                         --bf-accent: #f2c94c;
@@ -222,7 +213,9 @@
                     (function () {
                         var status = document.getElementById('bf-status');
                         var script = document.createElement('script');
-                        script.src = 'configurationpage?name=beeflix-profiles.js';
+                        script.src = (window.ApiClient && typeof window.ApiClient.getUrl === 'function')
+                            ? window.ApiClient.getUrl('/BeeFlixProfiles/profiles.js')
+                            : '/BeeFlixProfiles/profiles.js';
                         script.onload = function () {
                             if (status && !window.BeeFlixProfilesPageInitialized) {
                                 status.textContent = 'The page loaded, but profile tools did not initialize. Refresh the page and check the browser console.';
@@ -230,15 +223,11 @@
                         };
                         script.onerror = function () {
                             if (status) {
-                                status.textContent = 'The profile page loaded, but its JavaScript file could not be fetched. The plugin may need an update or Jellyfin restart.';
+                                status.textContent = 'The profile page loaded, but its JavaScript file could not be fetched. Refresh the page or check the Jellyfin server logs.';
                                 status.classList.add('bf-error');
                             }
                         };
                         document.head.appendChild(script);
                     })();
                 </script>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
+</div>
