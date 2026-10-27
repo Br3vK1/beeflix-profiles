@@ -5,6 +5,7 @@ using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.Library;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace BeeFlix.Profiles.Controllers;
 
@@ -52,7 +53,6 @@ public sealed class ProfilesController : ControllerBase
                 return StatusCode(503, new { message = "Enhanced review store format was not recognized." });
 
             var rows = new List<object>();
-            var totalVisible = 0;
             foreach (var entry in reviewEntries)
             {
                 var value = entry?.GetType().GetProperty("Value")?.GetValue(entry);
@@ -67,7 +67,6 @@ public sealed class ProfilesController : ControllerBase
                 if (!isAdmin && authorId != viewerId && author is not null && IsHiddenOrDisabled(author)) continue;
                 if (!isAdmin && author is null) continue;
 
-                totalVisible++;
                 rows.Add(new
                 {
                     userId = authorId.ToString("N"),
@@ -82,7 +81,7 @@ public sealed class ProfilesController : ControllerBase
             }
 
             var page = rows.Skip(offset).Take(limit).ToArray();
-            return Ok(new { userId = targetId.ToString("N"), total = totalVisible, limit, offset, reviews = page });
+            return Ok(new { userId = targetId.ToString("N"), total = rows.Count, limit, offset, reviews = page });
         }
         catch (Exception ex)
         {
