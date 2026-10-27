@@ -3,6 +3,8 @@ using System.Reflection;
 using System.Security.Claims;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.Entities;
+using MediaBrowser.Model.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -16,14 +18,16 @@ public sealed class ProfilesController : ControllerBase
 {
     private readonly IServiceProvider _services;
     private readonly IUserManager _users;
+    private readonly ILibraryManager _libraryManager;
     private readonly IPluginManager _pluginManager;
     private readonly ILogger<ProfilesController> _logger;
     private string? _reviewStoreDiagnostic;
 
-    public ProfilesController(IServiceProvider services, IUserManager users, IPluginManager pluginManager, ILogger<ProfilesController> logger)
+    public ProfilesController(IServiceProvider services, IUserManager users, ILibraryManager libraryManager, IPluginManager pluginManager, ILogger<ProfilesController> logger)
     {
         _services = services;
         _users = users;
+        _libraryManager = libraryManager;
         _pluginManager = pluginManager;
         _logger = logger;
     }
@@ -129,6 +133,10 @@ public sealed class ProfilesController : ControllerBase
                 .OrderByDescending(review => TryParseDate(review.updatedAt) ?? TryParseDate(review.createdAt) ?? DateTimeOffset.MinValue)
                 .ToList();
 
+            // Resolve TMDB IDs against the local Jellyfin library in one batch. Reviews
+            // retain their Enhanced IDs; the lookup enriches display metadata only.
+            var mediaByTmdb = ResolveMediaTitles(rows);
+
             var ratedValues = rows
                 .Where(review => review.rating is > 0)
                 .Select(review => review.rating!.Value)
@@ -141,7 +149,25 @@ public sealed class ProfilesController : ControllerBase
                 averageRating = ratedValues.Length > 0 ? Math.Round(ratedValues.Average(), 2) : (double?)null
             };
 
-            var page = rows.Skip(offset).Take(limit).ToArray();
+            var page = rows.Skip(offset).Take(limit).Select(review =>
+            {
+                var isShow = IsShowType(review.mediaType);
+                mediaByTmdb.TryGetValue((review.tmdbId ?? string.Empty, isShow), out var media);
+                return new
+                {
+                    review.userId,
+                    review.userName,
+                    review.tmdbId,
+                    review.mediaType,
+                    title = media.Name,
+                    jellyfinItemId = media.Id == Guid.Empty ? null : media.Id.ToString("N"),
+                    year = media.ProductionYear,
+                    content = review.content,
+                    rating = review.rating,
+                    createdAt = review.createdAt,
+                    updatedAt = review.updatedAt
+                };
+            }).ToArray();
             return Ok(new { userId = targetId.ToString("N"), total = rows.Count, limit, offset, stats, reviews = page });
         }
         catch (Exception ex)
@@ -149,6 +175,61 @@ public sealed class ProfilesController : ControllerBase
             _logger.LogError(ex, "Failed to read Jellyfin Enhanced review store for profile {UserId}", targetId);
             return StatusCode(503, new { message = "Could not read Enhanced reviews. Check plugin compatibility and server logs." });
         }
+    }
+
+    private Dictionary<(string TmdbId, bool IsShow), (string? Name, Guid Id, int? ProductionYear)> ResolveMediaTitles(IReadOnlyCollection<ProfileReview> reviews)
+    {
+        var tmdbIds = reviews
+            .Select(review => review.tmdbId)
+            .Where(id => !string.IsNullOrWhiteSpace(id) && id!.All(char.IsDigit))
+            .Select(id => id!)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        var resolved = new Dictionary<(string TmdbId, bool IsShow), (string? Name, Guid Id, int? ProductionYear)>();
+        if (tmdbIds.Length == 0) return resolved;
+
+        try
+        {
+            var query = new InternalItemsQuery
+            {
+                HasAnyProviderIds = new Dictionary<string, string[]>
+                {
+                    ["Tmdb"] = tmdbIds
+                },
+                IncludeItemTypes = new[] { BaseItemKind.Movie, BaseItemKind.Series },
+                IsVirtualItem = false,
+                Recursive = true,
+                EnableTotalRecordCount = false
+            };
+
+            var items = _libraryManager.GetItemsResult(query).Items;
+            foreach (var item in items)
+            {
+                if (item is null || string.IsNullOrWhiteSpace(item.Name)
+                    || !item.ProviderIds.TryGetValue("Tmdb", out var providerId)
+                    || string.IsNullOrWhiteSpace(providerId))
+                {
+                    continue;
+                }
+
+                var isShow = string.Equals(item.GetType().Name, "Series", StringComparison.Ordinal);
+                resolved.TryAdd((providerId, isShow), (item.Name, item.Id, item.ProductionYear));
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not resolve reviewed TMDB IDs against the local Jellyfin library");
+        }
+
+        return resolved;
+    }
+
+    private static bool IsShowType(string? mediaType)
+    {
+        return mediaType?.Contains("tv", StringComparison.OrdinalIgnoreCase) == true
+            || mediaType?.Contains("show", StringComparison.OrdinalIgnoreCase) == true
+            || mediaType?.Contains("series", StringComparison.OrdinalIgnoreCase) == true;
     }
 
     private sealed record ProfileReview(
