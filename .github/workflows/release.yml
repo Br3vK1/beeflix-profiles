@@ -3,6 +3,13 @@ name: Publish BeeFlix Profiles
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Existing GitHub release tag to build/publish (example: 0.4.0.0)"
+        required: true
+        type: string
+        default: "0.4.0.0"
 
 permissions:
   contents: write
@@ -14,7 +21,7 @@ jobs:
       - name: Check out tagged source
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event.release.tag_name || inputs.tag_name }}
       - name: Set up .NET 10
         uses: actions/setup-dotnet@v4
         with:
@@ -25,7 +32,7 @@ jobs:
         run: dotnet restore BeeFlix.Profiles.csproj
       - name: Build
         env:
-          VERSION: ${{ github.event.release.tag_name }}
+          VERSION: ${{ github.event.release.tag_name || inputs.tag_name }}
         run: |
           VERSION="${VERSION#v}"
           dotnet publish BeeFlix.Profiles.csproj --configuration Release --output ./publish -p:Version="$VERSION" -p:AssemblyVersion="$VERSION" -p:FileVersion="$VERSION"
@@ -51,7 +58,7 @@ jobs:
       - name: Upload plugin ZIP to GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG_NAME: ${{ github.event.release.tag_name }}
+          TAG_NAME: ${{ github.event.release.tag_name || inputs.tag_name }}
         run: gh release upload "$TAG_NAME" ./BeeFlixProfiles-jellyfin12.zip --clobber
       - name: Check out manifest branch
         uses: actions/checkout@v4
@@ -61,7 +68,7 @@ jobs:
       - name: Update plugin repository manifest
         env:
           TAG_NAME: ${{ github.event.release.tag_name }}
-          RELEASE_URL: https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/BeeFlixProfiles-jellyfin12.zip
+          RELEASE_URL: https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name || inputs.tag_name }}/BeeFlixProfiles-jellyfin12.zip
         run: |
           node <<'NODE'
           const fs = require('fs');
