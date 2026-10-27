@@ -14,10 +14,6 @@
                     #BeeFlixProfilesPage .bf-wrap { max-width: 960px; margin: 0 auto; padding: 1.25rem; }
                     #BeeFlixProfilesPage .bf-muted { opacity: .72; }
                     #BeeFlixProfilesPage .bf-card { background: var(--jf-palette-background-paper, rgba(128,128,128,.09)); border: 1px solid var(--jf-palette-divider, rgba(128,128,128,.25)); border-radius: 14px; padding: 1rem; margin: 1rem 0; }
-                    #BeeFlixProfilesPage .bf-controls { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; }
-                    #BeeFlixProfilesPage .bf-controls label { display: block; margin-bottom: .35rem; }
-                    #BeeFlixProfilesPage input { width: min(100%, 390px); box-sizing: border-box; padding: .75rem; border-radius: 8px; }
-                    #BeeFlixProfilesPage button { cursor: pointer; border-radius: 8px; padding: .7rem 1rem; }
                     #BeeFlixProfilesPage .bf-status { min-height: 1.5em; overflow-wrap: anywhere; }
                     #BeeFlixProfilesPage .bf-review { border-top: 1px solid var(--jf-palette-divider, rgba(128,128,128,.25)); padding: .9rem 0; }
                     #BeeFlixProfilesPage .bf-review:first-child { border-top: 0; }
@@ -26,6 +22,21 @@
                     #BeeFlixProfilesPage .bf-profile-head { display: flex; align-items: center; gap: 1rem; }
                     #BeeFlixProfilesPage .bf-avatar { width: 68px; height: 68px; object-fit: cover; border-radius: 50%; background: rgba(128,128,128,.2); }
                     #BeeFlixProfilesPage .bf-error { color: var(--jf-palette-error-main, #ff8080); }
+                    #BeeFlixProfilesPage .bf-member-picker { position: relative; max-width: 560px; }
+                    #BeeFlixProfilesPage .bf-picker-toggle { display: flex; width: 100%; align-items: center; gap: .8rem; text-align: left; color: inherit; background: var(--jf-palette-background-default, rgba(0,0,0,.12)); border: 1px solid var(--jf-palette-divider, rgba(128,128,128,.35)); padding: .7rem .8rem; min-height: 62px; }
+                    #BeeFlixProfilesPage .bf-picker-toggle:focus-visible, #BeeFlixProfilesPage .bf-member-option:focus-visible { outline: 2px solid var(--jf-palette-primary-main, #5b8def); outline-offset: 2px; }
+                    #BeeFlixProfilesPage .bf-picker-toggle .bf-selected-name { flex: 1; }
+                    #BeeFlixProfilesPage .bf-picker-toggle .bf-chevron { opacity: .7; }
+                    #BeeFlixProfilesPage .bf-picker-menu { position: absolute; top: calc(100% + .35rem); left: 0; right: 0; z-index: 20; overflow: hidden; background: var(--jf-palette-background-paper, #20242d); border: 1px solid var(--jf-palette-divider, rgba(128,128,128,.35)); border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,.35); }
+                    #BeeFlixProfilesPage .bf-picker-search-wrap { display: block; padding: .7rem; border-bottom: 1px solid var(--jf-palette-divider, rgba(128,128,128,.25)); }
+                    #BeeFlixProfilesPage .bf-picker-search { display: block; box-sizing: border-box; width: 100%; padding: .7rem .8rem; border-radius: 8px; color: inherit; background: var(--jf-palette-background-default, rgba(0,0,0,.16)); border: 1px solid var(--jf-palette-divider, rgba(128,128,128,.35)); }
+                    #BeeFlixProfilesPage .bf-member-list { max-height: 320px; overflow-y: auto; padding: .25rem; }
+                    #BeeFlixProfilesPage .bf-member-option { display: flex; align-items: center; gap: .75rem; width: 100%; box-sizing: border-box; text-align: left; color: inherit; background: transparent; border: 0; border-radius: 8px; padding: .6rem .65rem; cursor: pointer; }
+                    #BeeFlixProfilesPage .bf-member-option:hover, #BeeFlixProfilesPage .bf-member-option[aria-selected="true"] { background: var(--jf-palette-action-hover, rgba(128,128,128,.16)); }
+                    #BeeFlixProfilesPage .bf-member-option .bf-member-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+                    #BeeFlixProfilesPage .bf-member-avatar { display: block; flex: 0 0 38px; width: 38px; height: 38px; object-fit: cover; border-radius: 50%; background: rgba(128,128,128,.2); }
+                    #BeeFlixProfilesPage .bf-empty-members { padding: .9rem; opacity: .72; }
+                    #BeeFlixProfilesPage [hidden] { display: none !important; }
                 </style>
 
                 <main class="bf-wrap">
@@ -33,16 +44,25 @@
                     <p class="bf-muted">Member profiles powered by your existing Jellyfin Enhanced reviews.</p>
 
                     <section class="bf-card" aria-labelledby="bf-profile-lookup-title">
-                        <h2 id="bf-profile-lookup-title">Open a member profile</h2>
-                        <p class="bf-muted">This preview loads a member's existing Enhanced reviews. Use the Jellyfin user ID for the profile you want to inspect.</p>
-                        <div class="bf-controls">
-                            <div>
-                                <label for="bf-user-id">Jellyfin user ID</label>
-                                <input id="bf-user-id" type="text" autocomplete="off" placeholder="Paste a user's ID">
+                        <h2 id="bf-profile-lookup-title">Browse members</h2>
+                        <p class="bf-muted">Choose a BeeFlix member below to open their reviews and ratings.</p>
+                        <div class="bf-member-picker">
+                            <button id="bf-member-picker-toggle" type="button" is="emby-button" class="bf-picker-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="bf-member-list">
+                                <img id="bf-selected-avatar" class="bf-member-avatar" alt="" hidden>
+                                <span id="bf-selected-name" class="bf-selected-name">Loading members…</span>
+                                <span class="bf-chevron material-icons" aria-hidden="true">expand_more</span>
+                            </button>
+                            <div id="bf-member-picker-menu" class="bf-picker-menu" hidden>
+                                <label class="bf-picker-search-wrap" for="bf-member-search">
+                                    <span class="bf-muted">Find a member</span>
+                                    <input id="bf-member-search" class="bf-picker-search" type="search" autocomplete="off" placeholder="Search names…">
+                                </label>
+                                <div id="bf-member-list" class="bf-member-list" role="listbox" aria-label="BeeFlix members" tabindex="-1">
+                                    <div class="bf-empty-members">Loading members…</div>
+                                </div>
                             </div>
-                            <button id="bf-open-profile" type="button" is="emby-button" class="raised button-submit">Load profile</button>
                         </div>
-                        <p id="bf-status" class="bf-status" role="status" aria-live="polite">The BeeFlix Profiles page loaded. Initializing profile tools…</p>
+                        <p id="bf-status" class="bf-status" role="status" aria-live="polite">Loading the member directory…</p>
                     </section>
                     <section id="bf-profile-result" aria-live="polite"></section>
                 </main>
