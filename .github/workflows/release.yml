@@ -1,0 +1,120 @@
+name: Publish BeeFlix Profiles
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Check profile UI JavaScript syntax
+        run: node --check Web/profiles.js
+      - name: Restore
+        run: dotnet restore BeeFlix.Profiles.csproj
+      - name: Build
+        env:
+          VERSION: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION="${VERSION#v}"
+          dotnet publish BeeFlix.Profiles.csproj --configuration Release --output ./publish -p:Version="$VERSION" -p:AssemblyVersion="$VERSION" -p:FileVersion="$VERSION"
+      - name: Package plugin
+        env:
+          VERSION: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          VERSION="${VERSION#v}"
+          mkdir -p ./package/BeeFlixProfiles
+          cp ./publish/BeeFlix.Profiles.dll ./package/BeeFlixProfiles/
+          cat > ./package/BeeFlixProfiles/meta.json <<EOF
+          {
+            "guid": "db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21",
+            "name": "BeeFlix Profiles",
+            "version": "$VERSION",
+            "targetAbi": "12.0.0.0"
+          }
+          EOF
+          (cd ./package && zip -r ../BeeFlixProfiles-jellyfin12.zip BeeFlixProfiles)
+          echo "PLUGIN_MD5=$(md5sum ./BeeFlixProfiles-jellyfin12.zip | awk '{print $1}')" >> "$GITHUB_ENV"
+          echo "PLUGIN_VERSION=$VERSION" >> "$GITHUB_ENV"
+      - name: Upload plugin ZIP to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG_NAME" ./BeeFlixProfiles-jellyfin12.zip --clobber
+      - name: Check out manifest branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: manifest-repo
+      - name: Update plugin repository manifest
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+          RELEASE_URL: https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/BeeFlixProfiles-jellyfin12.zip
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const file = 'manifest-repo/manifest.json';
+          const pluginGuid = 'db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21';
+          const version = process.env.PLUGIN_VERSION;
+          const checksum = process.env.PLUGIN_MD5;
+          const tag = process.env.TAG_NAME;
+          const releaseUrl = process.env.RELEASE_URL;
+          const entryVersion = {
+            version,
+            changelog: 'Preview release. Test on a non-production Jellyfin server before installing on BeeFlix.',
+            targetAbi: '12.0.0.0',
+            sourceUrl: releaseUrl,
+            checksum,
+            timestamp: new Date().toISOString()
+          };
+          let manifest = [];
+          if (fs.existsSync(file)) manifest = JSON.parse(fs.readFileSync(file, 'utf8'));
+          let plugin = manifest.find(p => p.guid === pluginGuid);
+          if (!plugin) {
+            plugin = {
+              category: 'General',
+              guid: pluginGuid,
+              name: 'BeeFlix Profiles',
+              description: 'Private member profiles using existing Jellyfin Enhanced reviews and ratings.',
+              overview: 'Letterboxd-style community profiles for BeeFlix.',
+              owner: 'Br3vK1',
+              versions: []
+            };
+            manifest.push(plugin);
+          }
+          plugin.versions = [entryVersion, ...(plugin.versions || []).filter(v => v.version !== version)].slice(0, 10);
+          fs.writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n');
+          NODE
+      - name: Commit manifest
+        working-directory: manifest-repo
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          if git diff --cached --quiet; then
+            echo "Manifest unchanged."
+          else
+            git commit -m "Update plugin catalog for $TAG_NAME"
+            git push origin HEAD:main
+          fi
+      - name: Upload CI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BeeFlixProfiles-jellyfin12-${{ env.PLUGIN_VERSION }}
+          path: BeeFlixProfiles-jellyfin12.zip
+          if-no-files-found: error
