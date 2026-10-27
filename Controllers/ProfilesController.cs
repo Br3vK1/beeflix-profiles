@@ -134,10 +134,6 @@ public sealed class ProfilesController : ControllerBase
                 .OrderByDescending(review => TryParseDate(review.updatedAt) ?? TryParseDate(review.createdAt) ?? DateTimeOffset.MinValue)
                 .ToList();
 
-            // Resolve TMDB IDs against the local Jellyfin library in one batch. Reviews
-            // retain their Enhanced IDs; the lookup enriches display metadata only.
-            var mediaByTmdb = ResolveMediaTitles(rows);
-
             var ratedValues = rows
                 .Where(review => review.rating is > 0)
                 .Select(review => review.rating!.Value)
@@ -150,7 +146,13 @@ public sealed class ProfilesController : ControllerBase
                 averageRating = ratedValues.Length > 0 ? Math.Round(ratedValues.Average(), 2) : (double?)null
             };
 
-            var page = rows.Skip(offset).Take(limit).Select(review =>
+            var pageRows = rows.Skip(offset).Take(limit).ToArray();
+
+            // Resolve only this page's IDs so a large review history doesn't create a
+            // needlessly huge provider-ID query. Enhanced remains the source of truth.
+            var mediaByTmdb = ResolveMediaTitles(pageRows);
+
+            var page = pageRows.Select(review =>
             {
                 var isShow = IsShowType(review.mediaType);
                 mediaByTmdb.TryGetValue((review.tmdbId ?? string.Empty, isShow), out var media);
