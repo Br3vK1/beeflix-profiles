@@ -8,7 +8,7 @@ BeeFlix Profiles is a Jellyfin 12 plugin for community profiles built on the rev
 
 Source branch: `feature/shareable-member-profiles-v0.5.0`
 
-Planned version: `0.5.0.0`
+Planned version: `0.5.1.0`
 
 ### Included in this milestone
 
@@ -47,7 +47,7 @@ Manifest URL:
 
 ## Publish after validation
 
-Open [Actions → Publish BeeFlix Profiles](https://github.com/Br3vK1/beeflix-profiles/actions/workflows/release.yml), choose **Run workflow**, select branch `main`, use version `0.5.0.0`, and source branch `feature/shareable-member-profiles-v0.5.0`.
+Open [Actions → Publish BeeFlix Profiles](https://github.com/Br3vK1/beeflix-profiles/actions/workflows/release.yml), choose **Run workflow**, select branch `main`, use version `0.5.1.0`, and source branch `feature/shareable-member-profiles-v0.5.0`.
 
 Do not publish until the branch's **Build BeeFlix Profiles** workflow passes and the user menu, shared profile URL, metadata matching, and member visibility have been tested on the target Jellyfin 12.2 instance.
 
@@ -65,4 +65,4 @@ dotnet restore BeeFlix.Profiles.csproj
 dotnet build BeeFlix.Profiles.csproj --configuration Release
 ```
 
-The GitHub Actions build also checks `Web/profiles.js` syntax and packages `BeeFlixProfiles-jellyfin12.zip` for Jellyfin 12 / .NET 10.
+The GitHub Actions build checks `Web/profiles.js` and `Web/profiles-loader.js` syntax and packages `BeeFlixProfiles-jellyfin12.zip` for Jellyfin 12 / .NET 10.

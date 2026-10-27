@@ -17,12 +17,15 @@ public sealed class PluginPagesRegistrationService : IHostedService
     private const string PluginPagesAssemblyName = "Jellyfin.Plugin.PluginPages";
     private const string FileTransformationAssemblyName = "Jellyfin.Plugin.FileTransformation";
     private const string PluginPagesInterfaceName = "Jellyfin.Plugin.PluginPages.PluginInterface";
+    private const string FileTransformationInterfaceName = "Jellyfin.Plugin.FileTransformation.PluginInterface";
+    private const string TransformationId = "04c44fb1-2224-4b6c-a66f-f617d07c945f";
     private const string PageUrl = "/BeeFlixProfiles/page";
 
     public static bool IsRegistered { get; private set; }
 
     private readonly ILogger<PluginPagesRegistrationService> _logger;
     private MethodInfo? _removePageMethod;
+    private MethodInfo? _removeTransformationMethod;
 
     public PluginPagesRegistrationService(ILogger<PluginPagesRegistrationService> logger)
     {
@@ -37,15 +40,43 @@ public sealed class PluginPagesRegistrationService : IHostedService
             var loadedAssemblies = AssemblyLoadContext.All.SelectMany(context => context.Assemblies).ToArray();
             var pluginPagesAssembly = loadedAssemblies.FirstOrDefault(assembly =>
                 string.Equals(assembly.GetName().Name, PluginPagesAssemblyName, StringComparison.Ordinal));
-            var fileTransformationLoaded = loadedAssemblies.Any(assembly =>
+            var fileTransformationAssembly = loadedAssemblies.FirstOrDefault(assembly =>
                 string.Equals(assembly.GetName().Name, FileTransformationAssemblyName, StringComparison.Ordinal));
 
-            if (!fileTransformationLoaded)
+            if (fileTransformationAssembly is null)
             {
                 _logger.LogWarning(
                     "File Transformation is not installed or could not be found. Install compatible File Transformation and Plugin Pages plugins to expose BeeFlix Community in the normal Jellyfin user menu.");
                 return Task.CompletedTask;
             }
+
+            var fileTransformationInterface = fileTransformationAssembly.GetType(
+                FileTransformationInterfaceName,
+                throwOnError: false,
+                ignoreCase: false);
+            var registerTransformation = fileTransformationInterface?.GetMethod(
+                "RegisterTransformation",
+                BindingFlags.Public | BindingFlags.Static);
+            _removeTransformationMethod = fileTransformationInterface?.GetMethod(
+                "RemoveTransformation",
+                BindingFlags.Public | BindingFlags.Static);
+
+            if (registerTransformation is null)
+            {
+                _logger.LogWarning("File Transformation is loaded but its registration API is unavailable.");
+                return Task.CompletedTask;
+            }
+
+            var transformationPayload = new JObject
+            {
+                ["id"] = TransformationId,
+                ["fileNamePattern"] = "index.html",
+                ["callbackAssembly"] = typeof(WebTransformation).Assembly.FullName,
+                ["callbackClass"] = typeof(WebTransformation).FullName,
+                ["callbackMethod"] = nameof(WebTransformation.IndexHtml)
+            };
+            registerTransformation.Invoke(null, new object?[] { transformationPayload });
+            _logger.LogInformation("Registered the BeeFlix Profiles loader injection through File Transformation.");
 
             var pluginInterface = pluginPagesAssembly?.GetType(
                 PluginPagesInterfaceName,
@@ -95,6 +126,7 @@ public sealed class PluginPagesRegistrationService : IHostedService
         try
         {
             _removePageMethod?.Invoke(null, new object?[] { PageId });
+            _removeTransformationMethod?.Invoke(null, new object?[] { TransformationId });
             IsRegistered = false;
         }
         catch (Exception ex)

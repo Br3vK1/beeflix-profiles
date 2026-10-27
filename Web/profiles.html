@@ -206,28 +206,5 @@
                     <section id="bf-profile-result" aria-live="polite"></section>
                 </main>
 
-                <!-- Jellyfin-web parses plugin pages as HTML fragments and disables plain script tags.
-                     Dynamically load the registered embedded JS page instead. This inline bootstrap
-                     is excluded from Cloudflare Rocket Loader to avoid a silently blank page. -->
-                <script data-cfasync="false">
-                    (function () {
-                        var status = document.getElementById('bf-status');
-                        var script = document.createElement('script');
-                        script.src = (window.ApiClient && typeof window.ApiClient.getUrl === 'function')
-                            ? window.ApiClient.getUrl('/BeeFlixProfiles/profiles.js')
-                            : '/BeeFlixProfiles/profiles.js';
-                        script.onload = function () {
-                            if (status && !window.BeeFlixProfilesPageInitialized) {
-                                status.textContent = 'The page loaded, but profile tools did not initialize. Refresh the page and check the browser console.';
-                            }
-                        };
-                        script.onerror = function () {
-                            if (status) {
-                                status.textContent = 'The profile page loaded, but its JavaScript file could not be fetched. Refresh the page or check the Jellyfin server logs.';
-                                status.classList.add('bf-error');
-                            }
-                        };
-                        document.head.appendChild(script);
-                    })();
-                </script>
+                <!-- JavaScript is loaded by the File Transformation bootstrap after this fragment is inserted. -->
 </div>

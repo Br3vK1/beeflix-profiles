@@ -62,8 +62,28 @@ public sealed class ProfilesController : ControllerBase
         return File(stream, "application/javascript; charset=utf-8");
     }
 
+    [HttpGet("loader.js")]
+    [AllowAnonymous]
+    public IActionResult GetProfileLoaderScript()
+    {
+        var stream = typeof(Plugin).Assembly.GetManifestResourceStream("BeeFlix.Profiles.Web.profiles-loader.js");
+        if (stream is null)
+        {
+            _logger.LogError("The embedded BeeFlix Profiles loader script was not found.");
+            return NotFound();
+        }
+
+        return File(stream, "application/javascript; charset=utf-8");
+    }
+
     [HttpGet("health")]
-    public IActionResult Health() => Ok(new { plugin = "BeeFlix Profiles", version = "0.5.0.0", enhancedIntegration = FindReviewStore() != null });
+    public IActionResult Health() => Ok(new
+    {
+        plugin = "BeeFlix Profiles",
+        version = "0.5.1.0",
+        enhancedIntegration = FindReviewStore() != null,
+        userFacingNavigation = PluginPagesRegistrationService.IsRegistered
+    });
 
     [HttpGet("users")]
     public IActionResult GetMembers()
