@@ -94,7 +94,7 @@ jobs:
           const releaseUrl = process.env.RELEASE_URL;
           const entryVersion = {
             version,
-            changelog: 'Adds shareable member profile links, profile-wide review statistics, newest-first paginated review history, and direct-link visibility enforcement. Preview release; test on a non-production server first.',
+            changelog: 'Adds user-facing BeeFlix Community navigation through Plugin Pages, shareable profiles, profile-wide review statistics, newest-first review pagination, local Jellyfin title/poster resolution, and a honey-accent responsive design. Requires compatible Plugin Pages and File Transformation plugins. Preview release; validate on the target Jellyfin 12.2 server first.',
             targetAbi: '12.0.0.0',
             sourceUrl: releaseUrl,
             checksum,
