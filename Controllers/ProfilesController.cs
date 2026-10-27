@@ -28,7 +28,7 @@ public sealed class ProfilesController : ControllerBase
     }
 
     [HttpGet("health")]
-    public IActionResult Health() => Ok(new { plugin = "BeeFlix Profiles", version = "0.4.0.3", enhancedIntegration = FindReviewStore() != null });
+    public IActionResult Health() => Ok(new { plugin = "BeeFlix Profiles", version = "0.4.0.4", enhancedIntegration = FindReviewStore() != null });
 
     [HttpGet("users")]
     public IActionResult GetMembers()
