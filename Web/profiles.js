@@ -101,7 +101,7 @@
         } catch (_) {}
       }
       const statusLabel = [response.status, response.statusText].filter(Boolean).join(' ');
-      return body ? \`HTTP \${statusLabel}: \${body}\` : \`HTTP \${statusLabel}\`;
+      return body ? `HTTP ${statusLabel}: ${body}` : `HTTP ${statusLabel}`;
     }
 
     if (typeof error === 'string') return error;
@@ -114,7 +114,7 @@
   }
 
   function avatarUrl(userId, width = 96) {
-    return ApiClient.getUrl(\`/Users/\${encodeURIComponent(userId)}/Images/Primary?width=\${width}&quality=90\`);
+    return ApiClient.getUrl(`/Users/${encodeURIComponent(userId)}/Images/Primary?width=${width}&quality=90`);
   }
 
   function setPickerOpen(open) {
@@ -213,9 +213,9 @@
     const isShow = /tv|series|show|episode/i.test(mediaType);
     const title = document.createElement('a');
     title.className = 'bf-review-title';
-    title.textContent = tmdbId ? \`\${mediaType.toUpperCase()} · TMDB \${tmdbId}\` : mediaType.toUpperCase();
+    title.textContent = tmdbId ? `${mediaType.toUpperCase()} · TMDB ${tmdbId}` : mediaType.toUpperCase();
     if (tmdbId && /^\d+$/.test(tmdbId)) {
-      title.href = \`https://www.themoviedb.org/\${isShow ? 'tv' : 'movie'}/\${encodeURIComponent(tmdbId)}\`;
+      title.href = `https://www.themoviedb.org/${isShow ? 'tv' : 'movie'}/${encodeURIComponent(tmdbId)}`;
       title.target = '_blank';
       title.rel = 'noopener noreferrer';
     } else {
@@ -226,7 +226,7 @@
     if (review.rating != null && Number.isFinite(Number(review.rating))) {
       const rating = document.createElement('span');
       rating.className = 'bf-rating';
-      rating.textContent = \`★ \${Number(review.rating).toFixed(1).replace(/\.0$/, '')}/5\`;
+      rating.textContent = `★ ${Number(review.rating).toFixed(1).replace(/\.0$/, '')}/5`;
       top.appendChild(rating);
     }
 
@@ -314,7 +314,7 @@
     heading.textContent = 'Reviews and ratings';
     const counter = document.createElement('span');
     counter.className = 'bf-muted';
-    counter.textContent = \`\${reviews.length} of \${total}\`;
+    counter.textContent = `${reviews.length} of ${total}`;
     historyHeader.append(heading, counter);
     const reviewsList = document.createElement('div');
     reviewsList.className = 'bf-reviews-list';
@@ -351,14 +351,14 @@
     const cachedTotal = append && isSameProfile ? profileState.total : 0;
 
     status.textContent = append
-      ? \`Loading more of \${member.userName}’s reviews…\`
-      : \`Loading \${member.userName}’s profile…\`;
+      ? `Loading more of ${member.userName}’s reviews…`
+      : `Loading ${member.userName}’s profile…`;
     status.classList.remove('bf-error');
     if (!append) profileContainer.replaceChildren();
     else if (isSameProfile) renderProfile(member, cachedStats, existingReviews, cachedTotal, true);
 
     try {
-      const endpoint = ApiClient.getUrl(\`/BeeFlixProfiles/users/\${encodeURIComponent(id)}/reviews?limit=50&offset=\${offset}\`);
+      const endpoint = ApiClient.getUrl(`/BeeFlixProfiles/users/${encodeURIComponent(id)}/reviews?limit=50&offset=${offset}`);
       const data = await ApiClient.ajax({ type: 'GET', url: endpoint, dataType: 'json' });
       if (requestId !== profileRequestSequence) return;
 
@@ -369,12 +369,12 @@
       profileState = { userId: id, total, reviews: combinedReviews, stats };
 
       renderProfile(member, stats, combinedReviews, total, false);
-      status.textContent = \`Showing \${combinedReviews.length} of \${total} visible reviews for \${member.userName}.\`;
+      status.textContent = `Showing ${combinedReviews.length} of ${total} visible reviews for ${member.userName}.`;
     } catch (error) {
       if (requestId !== profileRequestSequence) return;
       console.error('[BeeFlix Profiles] Failed to load profile:', error);
       const reason = await describeApiError(error);
-      status.textContent = \`Could not load \${member.userName}’s profile: \${reason}. Check the plugin version and server logs.\`;
+      status.textContent = `Could not load ${member.userName}’s profile: ${reason}. Check the plugin version and server logs.`;
       status.classList.add('bf-error');
       if (append && isSameProfile) {
         renderProfile(member, cachedStats, existingReviews, cachedTotal, false);
@@ -407,7 +407,7 @@
       if (requestedId) {
         const requestedMember = members.find(member => normalizeId(member.userId) === normalizeId(requestedId));
         if (requestedMember) {
-          status.textContent = \`Opening \${requestedMember.userName}’s profile…\`;
+          status.textContent = `Opening ${requestedMember.userName}’s profile…`;
           selectMember(requestedMember, { updateUrl: false });
         } else {
           selectedName.textContent = 'Profile unavailable';
@@ -419,7 +419,7 @@
         return;
       }
 
-      status.textContent = \`Loaded \${members.length} members. Choose a profile to explore.\`;
+      status.textContent = `Loaded ${members.length} members. Choose a profile to explore.`;
       const currentUserId = ApiClient.getCurrentUserId?.();
       const currentMember = members.find(member => normalizeId(member.userId) === normalizeId(currentUserId));
       if (currentMember) selectMember(currentMember, { updateUrl: false });
@@ -427,7 +427,7 @@
       console.error('[BeeFlix Profiles] Failed to load member directory:', error);
       selectedName.textContent = 'Could not load members';
       const reason = await describeApiError(error);
-      status.textContent = \`Could not load the member directory: \${reason}. Check the plugin version and server logs.\`;
+      status.textContent = `Could not load the member directory: ${reason}. Check the plugin version and server logs.`;
       status.classList.add('bf-error');
       memberList.replaceChildren();
       const empty = document.createElement('div');
