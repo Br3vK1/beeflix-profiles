@@ -1,0 +1,20 @@
+[
+  {
+    "category": "General",
+    "guid": "db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21",
+    "name": "BeeFlix Profiles",
+    "description": "Private member profiles using existing Jellyfin Enhanced reviews and ratings.",
+    "overview": "Letterboxd-style community profiles for BeeFlix.",
+    "owner": "Br3vK1",
+    "versions": [
+      {
+        "version": "0.4.0.0",
+        "changelog": "Preview release. Test on a non-production Jellyfin server before installing on BeeFlix.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/0.4.0.0/BeeFlixProfiles-jellyfin12.zip",
+        "checksum": "8f0542e0f4e131beac73a7b8e7f8cf77",
+        "timestamp": "2026-10-27T16:03:38.103Z"
+      }
+    ]
+  }
+]
