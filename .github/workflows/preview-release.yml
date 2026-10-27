@@ -1,0 +1,55 @@
+name: Publish BeeFlix Profiles Preview
+
+on:
+  push:
+    branches: ["feature/shareable-member-profiles-v0.5.0"]
+
+permissions:
+  contents: write
+
+jobs:
+  publish-preview:
+    # This one-time gate ensures ordinary feature pushes never publish a release.
+    if: ${{ github.event.head_commit.message == 'Publish 0.5.1.0 preview from CI' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out tested source
+        uses: actions/checkout@v4
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Check profile UI JavaScript syntax
+        run: node --check Web/profiles.js
+      - name: Check page loader JavaScript syntax
+        run: node --check Web/profiles-loader.js
+      - name: Restore
+        run: dotnet restore BeeFlix.Profiles.csproj
+      - name: Build and publish
+        run: dotnet publish BeeFlix.Profiles.csproj --configuration Release --output ./publish -p:Version="0.5.1.0" -p:AssemblyVersion="0.5.1.0" -p:FileVersion="0.5.1.0"
+      - name: Package plugin
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ./package/BeeFlixProfiles
+          cp ./publish/BeeFlix.Profiles.dll ./package/BeeFlixProfiles/
+          cat > ./package/BeeFlixProfiles/meta.json <<'EOF'
+          {
+            "guid": "db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21",
+            "name": "BeeFlix Profiles",
+            "version": "0.5.1.0",
+            "targetAbi": "12.0.0.0"
+          }
+          EOF
+          (cd ./package/BeeFlixProfiles && zip -r ../../BeeFlixProfiles-jellyfin12.zip .)
+      - name: Publish GitHub preview release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create "v0.5.1.0-preview" ./BeeFlixProfiles-jellyfin12.zip \
+            --title "BeeFlix Profiles 0.5.1.0 Preview" \
+            --prerelease \
+            --notes "Preview build for BeeFlix Community: user-facing Jellyfin menu integration, shareable member profiles, review statistics, paginated review history, local Jellyfin title/poster matching, and responsive BeeFlix styling.
+
+          Requires compatible Jellyfin 12 builds of Plugin Pages and File Transformation. CI build passed, but live Jellyfin behavior still needs smoke-testing. This preview is intentionally excluded from the stable plugin catalog."
