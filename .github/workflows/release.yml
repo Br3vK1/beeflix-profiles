@@ -6,10 +6,15 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: "Existing GitHub release tag to build/publish (example: 0.4.0.0)"
+        description: "Release version to publish (example: 0.4.0.1)"
         required: true
         type: string
-        default: "0.4.0.0"
+        default: "0.4.0.1"
+      source_ref:
+        description: "Branch or commit to build for a manual preview release"
+        required: true
+        type: string
+        default: "fix/page-shell-v0.4.1"
 
 permissions:
   contents: write
@@ -21,7 +26,7 @@ jobs:
       - name: Check out tagged source
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag_name }}
+          ref: ${{ github.event.release.tag_name || inputs.source_ref }}
       - name: Set up .NET 10
         uses: actions/setup-dotnet@v4
         with:
@@ -55,11 +60,20 @@ jobs:
           (cd ./package/BeeFlixProfiles && zip -r ../../BeeFlixProfiles-jellyfin12.zip .)
           echo "PLUGIN_MD5=$(md5sum ./BeeFlixProfiles-jellyfin12.zip | awk '{print $1}')" >> "$GITHUB_ENV"
           echo "PLUGIN_VERSION=$VERSION" >> "$GITHUB_ENV"
-      - name: Upload plugin ZIP to GitHub Release
+      - name: Create release if needed and upload plugin ZIP
         env:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.event.release.tag_name || inputs.tag_name }}
-        run: gh release upload "$TAG_NAME" ./BeeFlixProfiles-jellyfin12.zip --clobber
+          SOURCE_REF: ${{ github.event.release.tag_name || inputs.source_ref }}
+        run: |
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release upload "$TAG_NAME" ./BeeFlixProfiles-jellyfin12.zip --clobber
+          else
+            gh release create "$TAG_NAME" ./BeeFlixProfiles-jellyfin12.zip \
+              --target "$SOURCE_REF" \
+              --title "BeeFlix Profiles $TAG_NAME Preview" \
+              --notes "Preview page-load fix for Jellyfin 12. Validate on a test instance before using this build on your production BeeFlix server."
+          fi
       - name: Check out manifest branch
         uses: actions/checkout@v4
         with:
