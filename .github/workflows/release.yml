@@ -21,6 +21,9 @@ permissions:
 
 jobs:
   build-and-publish:
+    # Preview tags are built and attached by the dedicated preview workflow; do not
+    # push pre-release versions into the stable plugin catalog.
+    if: ${{ github.event_name != 'release' || !endsWith(github.event.release.tag_name, '-preview') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out requested source
