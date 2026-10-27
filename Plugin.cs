@@ -13,7 +13,7 @@ public sealed class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     public override Guid Id => Guid.Parse("db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21");
     public IEnumerable<PluginPageInfo> GetPages() => new[]
     {
-        new PluginPageInfo { Name = "beeflix-profiles", DisplayName = "BeeFlix Community", EmbeddedResourcePath = "BeeFlix.Profiles.Web.profiles.html", EnableInMainMenu = true },
+        new PluginPageInfo { Name = "beeflix-profiles", DisplayName = "BeeFlix Community", EmbeddedResourcePath = "BeeFlix.Profiles.Web.profiles.html", EnableInMainMenu = false },
         new PluginPageInfo { Name = "beeflix-profiles.js", EmbeddedResourcePath = "BeeFlix.Profiles.Web.profiles.js" }
     };
 }
