@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Reflection;
 using System.Security.Claims;
-using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.Library;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -40,7 +39,7 @@ public sealed class ProfilesController : ControllerBase
         if (viewerId == Guid.Empty) return Unauthorized();
         var viewer = _users.GetUserById(viewerId);
         if (viewer is null) return Unauthorized();
-        var isAdmin = viewer.HasPermission(PermissionKind.IsAdministrator);
+        var isAdmin = SafelyHasPermission(viewer, "IsAdministrator");
 
         var store = FindReviewStore();
         if (store is null)
@@ -101,16 +100,27 @@ public sealed class ProfilesController : ControllerBase
             var config = enhancedType?.GetProperty("Configuration")?.GetValue(instance);
             var hideHidden = config?.GetType().GetProperty("HideReviewsFromHiddenUsers")?.GetValue(config) is bool h ? h : true;
             var hideDisabled = config?.GetType().GetProperty("HideReviewsFromDisabledUsers")?.GetValue(config) is bool d ? d : true;
-            return (hideHidden && AuthorHasPermission(author, PermissionKind.IsHidden)) ||
-                   (hideDisabled && AuthorHasPermission(author, PermissionKind.IsDisabled));
+            return (hideHidden && HasPermissionNamed(author, "IsHidden")) ||
+                   (hideDisabled && HasPermissionNamed(author, "IsDisabled"));
         }
         catch { return true; } // fail closed if privacy configuration cannot be evaluated
     }
 
-    private static bool AuthorHasPermission(object author, PermissionKind permission)
+    private static bool SafelyHasPermission(object user, string permissionName)
     {
-        var method = author.GetType().GetMethod("HasPermission", new[] { typeof(PermissionKind) });
-        return method?.Invoke(author, new object[] { permission }) is bool result && result;
+        try { return HasPermissionNamed(user, permissionName); }
+        catch { return false; }
+    }
+
+    private static bool HasPermissionNamed(object subject, string permissionName)
+    {
+        var method = subject.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .FirstOrDefault(m => m.Name == "HasPermission" && m.GetParameters().Length == 1
+                && m.GetParameters()[0].ParameterType.IsEnum);
+        if (method is null) throw new MissingMethodException(subject.GetType().FullName, "HasPermission(enum)");
+        var enumType = method.GetParameters()[0].ParameterType;
+        var permission = Enum.Parse(enumType, permissionName, ignoreCase: false);
+        return method.Invoke(subject, new[] { permission }) is bool result && result;
     }
 
     private object? FindReviewStore()
