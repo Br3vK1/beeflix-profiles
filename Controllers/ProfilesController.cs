@@ -92,7 +92,7 @@ public sealed class ProfilesController : ControllerBase
             if (reviewsProp?.GetValue(store) is not IEnumerable reviewEntries)
                 return StatusCode(503, new { message = "Enhanced review store format was not recognized." });
 
-            var rows = new List<object>();
+            var rows = new List<ProfileReview>();
             foreach (var entry in reviewEntries)
             {
                 var value = entry?.GetType().GetProperty("Value")?.GetValue(entry);
@@ -107,27 +107,60 @@ public sealed class ProfilesController : ControllerBase
                 if (!isAdmin && authorId != viewerId && author is not null && IsHiddenOrDisabled(author)) continue;
                 if (!isAdmin && author is null) continue;
 
-                rows.Add(new
-                {
-                    userId = authorId.ToString("N"),
-                    userName = author?.Username ?? "Unknown member",
-                    tmdbId = ReadString(value, "TmdbId"),
-                    mediaType = ReadString(value, "MediaType"),
-                    content = ReadString(value, "Content"),
-                    rating = ReadNullableDouble(value, "Rating"),
-                    createdAt = ReadString(value, "CreatedAt"),
-                    updatedAt = ReadString(value, "UpdatedAt")
-                });
+                rows.Add(new ProfileReview(
+                    authorId.ToString("N"),
+                    author?.Username ?? "Unknown member",
+                    ReadString(value, "TmdbId"),
+                    ReadString(value, "MediaType"),
+                    ReadString(value, "Content"),
+                    ReadNullableDouble(value, "Rating"),
+                    ReadString(value, "CreatedAt"),
+                    ReadString(value, "UpdatedAt")));
             }
 
+            rows = rows
+                .OrderByDescending(review => TryParseDate(review.UpdatedAt) ?? TryParseDate(review.CreatedAt) ?? DateTimeOffset.MinValue)
+                .ToList();
+
+            var ratedValues = rows
+                .Where(review => review.Rating is > 0)
+                .Select(review => review.Rating!.Value)
+                .ToArray();
+            var stats = new
+            {
+                reviewCount = rows.Count,
+                ratedReviewCount = ratedValues.Length,
+                unratedReviewCount = rows.Count - ratedValues.Length,
+                averageRating = ratedValues.Length > 0 ? Math.Round(ratedValues.Average(), 2) : (double?)null
+            };
+
             var page = rows.Skip(offset).Take(limit).ToArray();
-            return Ok(new { userId = targetId.ToString("N"), total = rows.Count, limit, offset, reviews = page });
+            return Ok(new { userId = targetId.ToString("N"), total = rows.Count, limit, offset, stats, reviews = page });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to read Jellyfin Enhanced review store for profile {UserId}", targetId);
             return StatusCode(503, new { message = "Could not read Enhanced reviews. Check plugin compatibility and server logs." });
         }
+    }
+
+    private sealed record ProfileReview(
+        string userId,
+        string userName,
+        string? tmdbId,
+        string? mediaType,
+        string? content,
+        double? rating,
+        string? createdAt,
+        string? updatedAt);
+
+    private static DateTimeOffset? TryParseDate(string? value)
+    {
+        return DateTimeOffset.TryParse(
+            value,
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.AssumeUniversal,
+            out var parsed) ? parsed : null;
     }
 
     private bool IsHiddenOrDisabled(object author)
