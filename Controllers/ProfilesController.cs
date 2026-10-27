@@ -126,11 +126,11 @@ public sealed class ProfilesController : ControllerBase
             }
 
             rows = rows
-                .OrderByDescending(review => TryParseDate(review.UpdatedAt) ?? TryParseDate(review.CreatedAt) ?? DateTimeOffset.MinValue)
+                .OrderByDescending(review => TryParseDate(review.updatedAt) ?? TryParseDate(review.createdAt) ?? DateTimeOffset.MinValue)
                 .ToList();
 
             var ratedValues = rows
-                .Where(review => review.Rating is > 0)
+                .Where(review => review.rating is > 0)
                 .Select(review => review.Rating!.Value)
                 .ToArray();
             var stats = new
