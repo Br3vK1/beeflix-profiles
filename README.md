@@ -1,47 +1,53 @@
-# BeeFlix Profiles — Jellyfin 12 prototype
+# BeeFlix Profiles — shareable member profiles
 
-A small Jellyfin plugin prototype for Letterboxd-style community profiles, built around reviews already stored by Jellyfin Enhanced. It does not create a second ratings database.
+A lightweight Jellyfin 12 plugin that reuses the reviews and ratings already stored by Jellyfin Enhanced. BeeFlix Profiles does not create a duplicate ratings database and does not modify Enhanced's review data.
 
-**Status: prototype only. Do not install on the live BeeFlix server yet.**
+**Preview release:** validate on a test Jellyfin instance before rolling out broadly. Build success does not prove runtime behavior or privacy parity for every Enhanced version.
 
-## Included in this prototype
+## Current candidate
 
-- A basic plugin dashboard page.
-- Authenticated API endpoint: `GET /BeeFlixProfiles/users/{userId}/reviews?limit=50&offset=0`.
-- Reflection-based discovery of Enhanced's existing review store.
-- Conservative filtering for hidden/disabled reviewers.
-- A simple profile view showing member avatar, review count, average of the reviews returned, and review history.
-- GitHub Actions workflow targeting Jellyfin 12 / .NET 10 and packaging a ZIP artifact.
+Source branch: `feature/shareable-member-profiles-v0.5.0`
 
-## Not implemented yet
+Planned version: `0.5.0.0`
+
+This milestone adds:
+- Shareable links that open a specific member's profile directly.
+- Permission-aware handling for profiles that are not visible to the signed-in viewer.
+- Profile-wide review count, rated review count, and average rating (calculated across all visible reviews, not just the first page).
+- Newest-first review history, with a Load more button for older entries.
+- A profile share button, responsive layout, and links from TMDB IDs to the matching TMDB title page.
+- Existing member search and avatar picker retained.
+
+## How profile links work
+
+Open BeeFlix Community from Jellyfin. Choose a member and use **Share profile link**. The link opens the same profile view on your BeeFlix Jellyfin server for signed-in users who are allowed to view that member. Profiles are not public to the internet without signing into Jellyfin, and a link does not bypass the plugin's member visibility checks.
+
+## Native Jellyfin plugin repository
+
+Manifest URL:
+
+`https://raw.githubusercontent.com/Br3vK1/beeflix-profiles/main/manifest.json`
+
+The repository is public so Jellyfin can fetch the manifest and release ZIP without authentication.
+
+## Publish after validation
+
+Open [Actions → Publish BeeFlix Profiles](https://github.com/Br3vK1/beeflix-profiles/actions/workflows/release.yml), choose **Run workflow**, select branch `main`, set the version to `0.5.0.0`, and use source branch `feature/shareable-member-profiles-v0.5.0`. The workflow builds the source, creates a release ZIP, and updates the plugin manifest.
+
+Do not publish until the branch's Build BeeFlix Profiles workflow passes and the share-link flow has been tested on the target Jellyfin version.
+
+## Not included yet
 
 - Click-through profile links from the existing BeeFlix review carousel.
-- Full, reliable pagination in the UI (the API accepts limit/offset).
-- Jellyfin item-name/poster lookup; this prototype displays TMDB IDs.
-- Genre/taste profile, recent activity, badges, milestones, and aggregate stats across all pages.
+- Proper movie/show titles and posters resolved from the local Jellyfin library; reviews still show TMDB IDs and link out to TMDB.
+- Genre/taste summaries, recent activity beyond reviews, badges, and milestones.
+- Full automated privacy-parity tests against every Jellyfin Enhanced version.
 
-## Build
-
-The workflow builds with the .NET 10 SDK against Jellyfin 12 NuGet packages, then uploads `BeeFlixProfiles-jellyfin12.zip` as a workflow artifact. On GitHub, open **Actions → Build BeeFlix Profiles → the run → Artifacts**.
-
-Manual source build:
+## Build locally
 
 ```bash
 dotnet restore BeeFlix.Profiles.csproj
 dotnet build BeeFlix.Profiles.csproj --configuration Release
 ```
 
-## Validation requirements before live install
-
-1. Confirm the build succeeds.
-2. Confirm Jellyfin discovers the plugin controller route and serves the embedded dashboard page.
-3. Validate the API using a test user and test Jellyfin instance.
-4. Verify privacy rules against the exact installed Jellyfin Enhanced version. This prototype's reflection-based integration is brittle and is not claimed to be an exact reimplementation of Enhanced's internal visibility rules.
-5. Add the item/profile integration only after those checks pass.
-
-The prototype intentionally does not modify Jellyfin Enhanced, BeeFlix's working CSS, or the existing JS injector.
-
-
-## Packaging note
-
-The build workflow places `BeeFlix.Profiles.dll` and `meta.json` at the root of the install ZIP so Jellyfin can extract them directly into the plugin's versioned directory.
+The build workflow also runs `node --check Web/profiles.js` and packages `BeeFlixProfiles-jellyfin12.zip` for Jellyfin 12 / .NET 10.
