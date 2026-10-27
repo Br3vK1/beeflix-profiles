@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: Check profile UI JavaScript syntax
+        run: node --check Web/profiles.js
       - name: Restore
         run: dotnet restore BeeFlix.Profiles.csproj
       - name: Build
