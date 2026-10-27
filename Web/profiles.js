@@ -36,7 +36,7 @@
   }
 
   function getHashParts() {
-    const hash = window.location.hash || '#!/beeflix-profiles';
+    const hash = window.location.hash || '';
     const separator = hash.indexOf('?');
     return {
       route: separator >= 0 ? hash.slice(0, separator) : hash,
@@ -53,17 +53,27 @@
   function profileUrl(member) {
     const url = new URL(window.location.href);
     const parts = getHashParts();
-    parts.params.set('profileUserId', member.userId);
-    url.hash = parts.route + '?' + parts.params.toString();
+    if (parts.route) {
+      parts.params.set('profileUserId', member.userId);
+      url.hash = parts.route + '?' + parts.params.toString();
+    } else {
+      url.searchParams.set('profileUserId', member.userId);
+    }
     return url.toString();
   }
 
   function updateProfileUrl(member) {
     const url = new URL(window.location.href);
     const parts = getHashParts();
-    if (member) parts.params.set('profileUserId', member.userId);
-    else parts.params.delete('profileUserId');
-    url.hash = parts.route + (parts.params.toString() ? '?' + parts.params.toString() : '');
+    if (parts.route) {
+      if (member) parts.params.set('profileUserId', member.userId);
+      else parts.params.delete('profileUserId');
+      url.hash = parts.route + (parts.params.toString() ? '?' + parts.params.toString() : '');
+    } else if (member) {
+      url.searchParams.set('profileUserId', member.userId);
+    } else {
+      url.searchParams.delete('profileUserId');
+    }
     window.history.replaceState(null, '', url.toString());
   }
 
@@ -345,6 +355,7 @@
       : \`Loading \${member.userName}’s profile…\`;
     status.classList.remove('bf-error');
     if (!append) profileContainer.replaceChildren();
+    else if (isSameProfile) renderProfile(member, cachedStats, existingReviews, cachedTotal, true);
 
     try {
       const endpoint = ApiClient.getUrl(\`/BeeFlixProfiles/users/\${encodeURIComponent(id)}/reviews?limit=50&offset=\${offset}\`);
