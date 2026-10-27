@@ -16,9 +16,14 @@ The repository feed will be:
 
 GitHub repository visibility must be **public** for Jellyfin to fetch the manifest and GitHub Release ZIP without authentication. Making this repository public exposes the source code, prototype branch, and commit history. Keep it private until you explicitly choose to publish it.
 
-## First preview release
+## Publish a preview / hotfix
 
-The first release tag already exists. To finish publishing its downloadable ZIP and create the manifest, open [Actions → Publish BeeFlix Profiles](https://github.com/Br3vK1/beeflix-profiles/actions/workflows/release.yml), choose **Run workflow**, select branch `main`, enter release tag `0.4.0.0`, and run it. When it finishes successfully, `manifest.json` should exist on `main` and the release should have a `BeeFlixProfiles-jellyfin12.zip` asset.
+To publish the page-shell hotfix, open [Actions → Publish BeeFlix Profiles](https://github.com/Br3vK1/beeflix-profiles/actions/workflows/release.yml), choose **Run workflow**, select branch `main`, and use these inputs:
+
+- Release version: `0.4.0.1`
+- Source branch: `fix/page-shell-v0.4.1`
+
+The workflow builds that branch, creates release `0.4.0.1` with the ZIP attached, and updates `manifest.json` on `main`. Do not reuse `0.4.0.0` for modified code.
 
 For future releases:
 
