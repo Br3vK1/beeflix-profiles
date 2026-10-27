@@ -45,7 +45,7 @@ jobs:
             "targetAbi": "12.0.0.0"
           }
           EOF
-          (cd ./package && zip -r ../BeeFlixProfiles-jellyfin12.zip BeeFlixProfiles)
+          (cd ./package/BeeFlixProfiles && zip -r ../../BeeFlixProfiles-jellyfin12.zip .)
           echo "PLUGIN_MD5=$(md5sum ./BeeFlixProfiles-jellyfin12.zip | awk '{print $1}')" >> "$GITHUB_ENV"
           echo "PLUGIN_VERSION=$VERSION" >> "$GITHUB_ENV"
       - name: Upload plugin ZIP to GitHub Release
