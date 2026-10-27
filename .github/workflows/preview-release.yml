@@ -9,25 +9,31 @@ permissions:
 
 jobs:
   publish-preview:
-    # This one-time gate ensures ordinary feature pushes never publish a release.
+    # This gate prevents normal feature pushes from publishing a release.
     if: ${{ github.event.head_commit.message == 'Publish 0.5.1.0 preview from CI' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out tested source
         uses: actions/checkout@v4
+
       - name: Set up .NET 10
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+
       - name: Check profile UI JavaScript syntax
         run: node --check Web/profiles.js
+
       - name: Check page loader JavaScript syntax
         run: node --check Web/profiles-loader.js
+
       - name: Restore
         run: dotnet restore BeeFlix.Profiles.csproj
+
       - name: Build and publish
         run: dotnet publish BeeFlix.Profiles.csproj --configuration Release --output ./publish -p:Version="0.5.1.0" -p:AssemblyVersion="0.5.1.0" -p:FileVersion="0.5.1.0"
-      - name: Package plugin
+
+      - name: Package plugin and calculate catalog checksum
         shell: bash
         run: |
           set -euo pipefail
@@ -42,14 +48,73 @@ jobs:
           }
           EOF
           (cd ./package/BeeFlixProfiles && zip -r ../../BeeFlixProfiles-jellyfin12.zip .)
-      - name: Publish GitHub preview release
+          echo "PLUGIN_MD5=$(md5sum ./BeeFlixProfiles-jellyfin12.zip | awk '{print $1}')" >> "$GITHUB_ENV"
+
+      - name: Publish or update GitHub preview release
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG_NAME: v0.5.1.0-preview
+        shell: bash
         run: |
           set -euo pipefail
-          gh release create "v0.5.1.0-preview" ./BeeFlixProfiles-jellyfin12.zip \
-            --title "BeeFlix Profiles 0.5.1.0 Preview" \
-            --prerelease \
-            --notes "Preview build for BeeFlix Community: user-facing Jellyfin menu integration, shareable member profiles, review statistics, paginated review history, local Jellyfin title/poster matching, and responsive BeeFlix styling.
+          cat > release-notes.md <<'EOF'
+          Preview build for BeeFlix Community: user-facing Jellyfin menu integration, shareable member profiles, review statistics, paginated review history, local Jellyfin title/poster matching, and responsive BeeFlix styling.
 
-          Requires compatible Jellyfin 12 builds of Plugin Pages and File Transformation. CI build passed, but live Jellyfin behavior still needs smoke-testing. This preview is intentionally excluded from the stable plugin catalog."
+          Requires compatible Jellyfin 12 builds of Plugin Pages and File Transformation. CI build passed, but live Jellyfin behavior still needs smoke-testing. This version is listed in the BeeFlix plugin catalog as a preview.
+          EOF
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release upload "$TAG_NAME" ./BeeFlixProfiles-jellyfin12.zip --clobber
+            gh release edit "$TAG_NAME" --title "BeeFlix Profiles 0.5.1.0 Preview" --prerelease --notes-file release-notes.md
+          else
+            gh release create "$TAG_NAME" ./BeeFlixProfiles-jellyfin12.zip \
+              --target "$GITHUB_SHA" \
+              --title "BeeFlix Profiles 0.5.1.0 Preview" \
+              --prerelease \
+              --notes-file release-notes.md
+          fi
+
+      - name: Check out plugin catalog
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: catalog-repo
+
+      - name: Add preview to Jellyfin plugin catalog
+        working-directory: catalog-repo
+        env:
+          PLUGIN_MD5: ${{ env.PLUGIN_MD5 }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const file = 'manifest.json';
+          const pluginGuid = 'db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21';
+          const version = '0.5.1.0';
+          const releaseUrl = 'https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.5.1.0-preview/BeeFlixProfiles-jellyfin12.zip';
+          let manifest = JSON.parse(fs.readFileSync(file, 'utf8'));
+          let plugin = manifest.find(p => p.guid === pluginGuid);
+          if (!plugin) throw new Error('BeeFlix Profiles entry was not found in the plugin catalog.');
+          const entry = {
+            version,
+            changelog: 'PREVIEW: Adds the user-facing BeeFlix Community page, shareable member profiles, profile statistics, paginated review history, local Jellyfin title/poster resolution, and responsive honey-accent styling. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.',
+            targetAbi: '12.0.0.0',
+            sourceUrl: releaseUrl,
+            checksum: process.env.PLUGIN_MD5,
+            timestamp: new Date().toISOString()
+          };
+          if (!entry.checksum || !/^[a-f0-9]{32}$/i.test(entry.checksum)) throw new Error('Could not calculate a valid MD5 checksum for the ZIP.');
+          plugin.versions = [entry, ...(plugin.versions || []).filter(v => v.version !== version)].slice(0, 10);
+          fs.writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n');
+          NODE
+
+      - name: Commit plugin catalog update
+        working-directory: catalog-repo
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: v0.5.1.0-preview
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          git commit -m "Add BeeFlix Profiles 0.5.1.0 preview to catalog"
+          git push origin HEAD:main
