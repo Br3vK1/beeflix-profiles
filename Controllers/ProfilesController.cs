@@ -78,6 +78,13 @@ public sealed class ProfilesController : ControllerBase
         if (viewer is null) return Unauthorized();
         var isAdmin = SafelyHasPermission(viewer, "IsAdministrator");
 
+        // The shareable URL is not a permission grant: enforce the same member-visibility
+        // rule on the API itself so a copied or hand-crafted URL cannot bypass the directory.
+        var targetUser = _users.GetUserById(targetId);
+        if (targetUser is null && !isAdmin) return NotFound();
+        if (!isAdmin && targetId != viewerId && targetUser is not null && IsHiddenOrDisabled(targetUser))
+            return NotFound();
+
         var store = FindReviewStore();
         if (store is null)
             return StatusCode(503, new
