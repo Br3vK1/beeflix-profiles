@@ -1,23 +1,76 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BeeFlix Profiles</title>
-<style>
-:root{color-scheme:dark}body{font:16px system-ui,sans-serif;background:#111;color:#eee;margin:0;padding:24px}.wrap{max-width:900px;margin:auto}.muted{color:#aaa}.card{background:#202020;border:1px solid #383838;border-radius:14px;padding:16px;margin:12px 0}.review{border-top:1px solid #393939;padding:14px 0}.review:first-child{border-top:0}.rating{color:#f4c95d;font-weight:700}.head{display:flex;align-items:center;gap:16px}.avatar{width:72px;height:72px;border-radius:50%;object-fit:cover;background:#333}.pill{display:inline-block;padding:5px 9px;border-radius:20px;background:#333;color:#ddd;font-size:13px}button{background:#f2c94c;color:#171717;border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer}input{background:#222;border:1px solid #555;color:#eee;padding:10px;border-radius:8px;width:min(100%,360px)}.error{color:#ff9b9b}
-</style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BeeFlix Profiles</title>
 </head>
-<body><main class="wrap">
-<h1>🐝 BeeFlix Community</h1>
-<p class="muted">Member profiles · powered by your existing Jellyfin Enhanced reviews</p>
-<section class="card">
-<h2>Open a member profile</h2>
-<p class="muted">Prototype: enter a Jellyfin user ID to preview the profile API. In-app review-card links, taste profiles, activity, and badges are not implemented yet.</p>
-<input id="uid" placeholder="Jellyfin user ID" autocomplete="off">
-<button id="open">Load profile</button>
-<p id="status" class="muted" role="status" aria-live="polite"></p>
-</section>
-<section id="profile"></section>
-</main><script src="beeflix-profiles.js"></script></body>
+<body>
+    <div id="BeeFlixProfilesPage" data-role="page" class="page type-interior pluginConfigurationPage">
+        <div data-role="content">
+            <div class="content-primary">
+                <style>
+                    #BeeFlixProfilesPage { color: var(--jf-palette-text-primary, inherit); }
+                    #BeeFlixProfilesPage .bf-wrap { max-width: 960px; margin: 0 auto; padding: 1.25rem; }
+                    #BeeFlixProfilesPage .bf-muted { opacity: .72; }
+                    #BeeFlixProfilesPage .bf-card { background: var(--jf-palette-background-paper, rgba(128,128,128,.09)); border: 1px solid var(--jf-palette-divider, rgba(128,128,128,.25)); border-radius: 14px; padding: 1rem; margin: 1rem 0; }
+                    #BeeFlixProfilesPage .bf-controls { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; }
+                    #BeeFlixProfilesPage .bf-controls label { display: block; margin-bottom: .35rem; }
+                    #BeeFlixProfilesPage input { width: min(100%, 390px); box-sizing: border-box; padding: .75rem; border-radius: 8px; }
+                    #BeeFlixProfilesPage button { cursor: pointer; border-radius: 8px; padding: .7rem 1rem; }
+                    #BeeFlixProfilesPage .bf-status { min-height: 1.5em; overflow-wrap: anywhere; }
+                    #BeeFlixProfilesPage .bf-review { border-top: 1px solid var(--jf-palette-divider, rgba(128,128,128,.25)); padding: .9rem 0; }
+                    #BeeFlixProfilesPage .bf-review:first-child { border-top: 0; }
+                    #BeeFlixProfilesPage .bf-rating { margin-left: .65rem; font-weight: 700; }
+                    #BeeFlixProfilesPage .bf-pill { display: inline-block; padding: .25rem .55rem; margin: .15rem .25rem .15rem 0; border-radius: 999px; background: var(--jf-palette-action-hover, rgba(128,128,128,.16)); font-size: .9em; }
+                    #BeeFlixProfilesPage .bf-profile-head { display: flex; align-items: center; gap: 1rem; }
+                    #BeeFlixProfilesPage .bf-avatar { width: 68px; height: 68px; object-fit: cover; border-radius: 50%; background: rgba(128,128,128,.2); }
+                    #BeeFlixProfilesPage .bf-error { color: var(--jf-palette-error-main, #ff8080); }
+                </style>
+
+                <main class="bf-wrap">
+                    <h1>🐝 BeeFlix Community</h1>
+                    <p class="bf-muted">Member profiles powered by your existing Jellyfin Enhanced reviews.</p>
+
+                    <section class="bf-card" aria-labelledby="bf-profile-lookup-title">
+                        <h2 id="bf-profile-lookup-title">Open a member profile</h2>
+                        <p class="bf-muted">This preview loads a member's existing Enhanced reviews. Use the Jellyfin user ID for the profile you want to inspect.</p>
+                        <div class="bf-controls">
+                            <div>
+                                <label for="bf-user-id">Jellyfin user ID</label>
+                                <input id="bf-user-id" type="text" autocomplete="off" placeholder="Paste a user's ID">
+                            </div>
+                            <button id="bf-open-profile" type="button" is="emby-button" class="raised button-submit">Load profile</button>
+                        </div>
+                        <p id="bf-status" class="bf-status" role="status" aria-live="polite">The BeeFlix Profiles page loaded. Initializing profile tools…</p>
+                    </section>
+                    <section id="bf-profile-result" aria-live="polite"></section>
+                </main>
+
+                <!-- Jellyfin-web parses plugin pages as HTML fragments and disables plain script tags.
+                     Dynamically load the registered embedded JS page instead. This inline bootstrap
+                     is excluded from Cloudflare Rocket Loader to avoid a silently blank page. -->
+                <script data-cfasync="false">
+                    (function () {
+                        var status = document.getElementById('bf-status');
+                        var script = document.createElement('script');
+                        script.src = 'configurationpage?name=beeflix-profiles.js';
+                        script.onload = function () {
+                            if (status && !window.BeeFlixProfilesPageInitialized) {
+                                status.textContent = 'The page loaded, but profile tools did not initialize. Refresh the page and check the browser console.';
+                            }
+                        };
+                        script.onerror = function () {
+                            if (status) {
+                                status.textContent = 'The profile page loaded, but its JavaScript file could not be fetched. The plugin may need an update or Jellyfin restart.';
+                                status.classList.add('bf-error');
+                            }
+                        };
+                        document.head.appendChild(script);
+                    })();
+                </script>
+            </div>
+        </div>
+    </div>
+</body>
 </html>
