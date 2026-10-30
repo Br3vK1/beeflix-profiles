@@ -19,6 +19,7 @@
   const profileContainer = $('#bf-profile-result');
   const feedContainer = $('#bf-community-feed');
   const pickerToggle = $('#bf-member-picker-toggle');
+  const memberPicker = $('.bf-member-picker');
   const pickerMenu = $('#bf-member-picker-menu');
   const selectedName = $('#bf-selected-name');
   const selectedAvatar = $('#bf-selected-avatar');
@@ -62,9 +63,8 @@
     const showProfile = activeView === 'profile';
     pageRoot.classList.toggle('bf-view-profile', showProfile);
     const profileSearchbar = profileContainer.querySelector('.bf-profile-searchbar');
-    const picker = pageRoot.querySelector('.bf-member-picker');
     const pickerHost = showProfile ? profileSearchbar : pageRoot.querySelector('.bf-directory-card .bf-member-picker');
-    if (pickerHost && picker && picker.parentElement !== pickerHost) pickerHost.appendChild(picker);
+    if (pickerHost && memberPicker && memberPicker.parentElement !== pickerHost) pickerHost.appendChild(memberPicker);
     profileContainer.hidden = !showProfile;
     feedContainer.hidden = showProfile;
     if (showProfile) {
@@ -964,8 +964,7 @@
     sideColumn.appendChild(achievementSection);
     overview.append(mainColumn, sideColumn);
     profileContainer.replaceChildren(profileSearchbar, section, overview);
-    const picker = pageRoot.querySelector('.bf-member-picker');
-    if (picker) profileSearchbar.appendChild(picker);
+    if (memberPicker) profileSearchbar.appendChild(memberPicker);
     revealProfileContainer();
   }
 
