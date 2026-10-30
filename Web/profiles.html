@@ -243,6 +243,48 @@
                     @media (max-width: 720px) {
                         #BeeFlixProfilesPage .bf-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
                     }
+
+                    /* 0.7.1 profile polish */
+                    #BeeFlixProfilesPage .bf-wrap { max-width: none; width: 100%; box-sizing: border-box; padding-left: clamp(1rem, 3vw, 3rem); padding-right: clamp(1rem, 3vw, 3rem); }
+                    #BeeFlixProfilesPage .bf-profile-card { padding: 0; border: 0; background: transparent; box-shadow: none; overflow: visible; }
+                    #BeeFlixProfilesPage .bf-profile-card::before { display: none; }
+                    #BeeFlixProfilesPage .bf-profile-hero { position: relative; isolation: isolate; min-height: 330px; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; border-radius: 24px; padding: clamp(1.25rem, 3vw, 2.2rem); background: #202633; border: 1px solid rgba(255,255,255,.12); box-shadow: 0 18px 48px rgba(0,0,0,.24); }
+                    #BeeFlixProfilesPage .bf-profile-hero::after { content: ""; position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, rgba(12,17,27,.94) 0%, rgba(12,17,27,.72) 42%, rgba(12,17,27,.25) 100%), linear-gradient(0deg, rgba(12,17,27,.9), transparent 72%); }
+                    #BeeFlixProfilesPage .bf-hero-backdrops { position: absolute; z-index: -2; inset: 0; background: #202633; }
+                    #BeeFlixProfilesPage .bf-hero-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; animation: bf-hero-rotate 24s infinite; filter: saturate(.82); }
+                    #BeeFlixProfilesPage .bf-hero-backdrop:nth-child(2) { animation-delay: 8s; }
+                    #BeeFlixProfilesPage .bf-hero-backdrop:nth-child(3) { animation-delay: 16s; }
+                    @keyframes bf-hero-rotate { 0%, 5% { opacity: 0; } 10%, 32% { opacity: 1; } 38%, 100% { opacity: 0; } }
+                    #BeeFlixProfilesPage .bf-profile-hero-content { position: relative; z-index: 1; max-width: 900px; }
+                    #BeeFlixProfilesPage .bf-profile-head { align-items: center; gap: 1.2rem; }
+                    #BeeFlixProfilesPage .bf-avatar { width: 96px; height: 96px; flex-basis: 96px; border-width: 3px; background: rgba(20,25,35,.55); box-shadow: 0 8px 28px rgba(0,0,0,.35); }
+                    #BeeFlixProfilesPage .bf-profile-name { color: #fff; text-shadow: 0 2px 18px rgba(0,0,0,.5); }
+                    #BeeFlixProfilesPage .bf-profile-identity p { color: rgba(255,255,255,.78); }
+                    #BeeFlixProfilesPage .bf-profile-actions { justify-content: flex-start; margin-top: 1.15rem; }
+                    #BeeFlixProfilesPage .bf-profile-hero .bf-community-back { background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.22); color: #fff; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+                    #BeeFlixProfilesPage .bf-profile-hero .bf-share-button { margin-left: auto; }
+                    #BeeFlixProfilesPage .bf-stat { display: grid; grid-template-columns: minmax(0,1fr) auto; grid-template-rows: auto auto; align-items: center; column-gap: .7rem; min-height: 88px; padding: 1rem 1.15rem; border: 1px solid rgba(255,255,255,.13); background: linear-gradient(135deg, rgba(255,255,255,.13), rgba(255,255,255,.045)); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 24px rgba(0,0,0,.10); backdrop-filter: blur(18px) saturate(145%); -webkit-backdrop-filter: blur(18px) saturate(145%); }
+                    #BeeFlixProfilesPage .bf-stat strong { grid-column: 1; grid-row: 1; font-size: clamp(1.35rem, 2vw, 1.7rem); }
+                    #BeeFlixProfilesPage .bf-stat span:not(.bf-stat-icon) { grid-column: 1; grid-row: 2; }
+                    #BeeFlixProfilesPage .bf-stat .bf-stat-icon { grid-column: 2; grid-row: 1 / span 2; align-self: center; margin: 0; font-size: 2rem; opacity: .95; filter: drop-shadow(0 2px 8px rgba(242,201,76,.2)); }
+                    #BeeFlixProfilesPage .bf-achievement-preview-row { display: block; padding: .75rem; background: rgba(255,255,255,.035); }
+                    #BeeFlixProfilesPage .bf-achievement-preview-row .bf-achievement-copy { display: flex; flex-direction: column; gap: .22rem; }
+                    #BeeFlixProfilesPage .bf-achievement-mini-track { height: 6px; overflow: hidden; margin-top: .55rem; border-radius: 99px; background: rgba(128,128,128,.22); }
+                    #BeeFlixProfilesPage .bf-achievement-mini-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--bf-accent-strong), #ffe58a); box-shadow: 0 0 10px rgba(242,201,76,.28); }
+                    #BeeFlixProfilesPage .bf-achievements-view-all { display: block; width: 100%; margin-top: .85rem; padding: .78rem 1rem; border: 0; border-radius: 12px; background: var(--bf-accent) !important; color: var(--bf-accent-ink) !important; font-weight: 850; cursor: pointer; transition: transform .15s ease, background .15s ease; }
+                    #BeeFlixProfilesPage .bf-achievements-view-all:hover { background: var(--bf-accent-strong) !important; transform: translateY(-1px); }
+                    #BeeFlixProfilesPage .bf-achievements-card { background: linear-gradient(145deg, rgba(255,255,255,.105), rgba(255,255,255,.045)); border: 1px solid rgba(255,255,255,.13); box-shadow: 0 12px 30px rgba(0,0,0,.10); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+                    @media (max-width: 720px) {
+                      #BeeFlixProfilesPage .bf-wrap { padding-left: .6rem; padding-right: .6rem; }
+                      #BeeFlixProfilesPage .bf-profile-hero { min-height: 270px; padding: 1rem; border-radius: 17px; }
+                      #BeeFlixProfilesPage .bf-avatar { width: 70px; height: 70px; flex-basis: 70px; }
+                      #BeeFlixProfilesPage .bf-stat { min-height: 74px; padding: .7rem; }
+                      #BeeFlixProfilesPage .bf-stat .bf-stat-icon { font-size: 1.55rem; }
+                    }
+                    @media (prefers-reduced-motion: reduce) {
+                      #BeeFlixProfilesPage .bf-hero-backdrop { animation: none; }
+                      #BeeFlixProfilesPage .bf-hero-backdrop:first-child { opacity: 1; }
+                    }
 </style>
 
                 <main class="bf-wrap">
