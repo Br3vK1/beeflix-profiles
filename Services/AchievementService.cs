@@ -15,7 +15,7 @@ public sealed class AchievementService
 {
     private static readonly object ConfigurationLock = new();
     private readonly object _eventEvaluationLock = new();
-    private readonly Dictionary<Guid, DateTimeOffset> _lastEventEvaluation = new();
+    private readonly Dictionary<Guid, Timer> _evaluationTimers = new();
 
     private static readonly AchievementDefinition[] MovieMilestones =
     [
@@ -56,36 +56,50 @@ public sealed class AchievementService
 
     private void OnUserDataSaved(object? sender, UserDataSaveEventArgs args)
     {
-        // PlaybackProgress fires repeatedly while someone watches. Only recalculate
-        // after a completed playback or an explicit watched/unwatched change.
+        // PlaybackProgress fires repeatedly while someone watches. Recalculate only
+        // after a completed playback or explicit watched-state change, with a short
+        // debounce so batch updates settle before we inspect the library.
         if (args.SaveReason is not (MediaBrowser.Model.Entities.UserDataSaveReason.PlaybackFinished
             or MediaBrowser.Model.Entities.UserDataSaveReason.TogglePlayed))
         {
             return;
         }
 
-        var now = DateTimeOffset.UtcNow;
         lock (_eventEvaluationLock)
         {
-            if (_lastEventEvaluation.TryGetValue(args.UserId, out var previous)
-                && now - previous < TimeSpan.FromSeconds(60))
+            if (_evaluationTimers.TryGetValue(args.UserId, out var existing))
             {
-                return;
+                existing.Change(TimeSpan.FromSeconds(10), Timeout.InfiniteTimeSpan);
             }
+            else
+            {
+                _evaluationTimers[args.UserId] = new Timer(
+                    _ => EvaluateUserAchievements(args.UserId),
+                    null,
+                    TimeSpan.FromSeconds(10),
+                    Timeout.InfiniteTimeSpan);
+            }
+        }
+    }
 
-            _lastEventEvaluation[args.UserId] = now;
+    private void EvaluateUserAchievements(Guid userId)
+    {
+        lock (_eventEvaluationLock)
+        {
+            if (_evaluationTimers.Remove(userId, out var timer))
+                timer.Dispose();
         }
 
         _ = Task.Run(() =>
         {
             try
             {
-                var user = _users.GetUserById(args.UserId);
+                var user = _users.GetUserById(userId);
                 if (user is not null) GetAchievements(user);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Background achievement refresh failed for user {UserId}", args.UserId);
+                _logger.LogWarning(ex, "Background achievement refresh failed for user {UserId}", userId);
             }
         });
     }
