@@ -377,7 +377,7 @@
     if (type === 'Reviewed' && entry.Rating != null) {
       const rating = document.createElement('div');
       rating.className = 'bf-activity-rating';
-      rating.textContent = `★ ${Number(entry.Rating).toFixed(1).replace(/\\.0$/, '')}/5`;
+      rating.textContent = `★ ${Number(entry.Rating).toFixed(1).replace(/\.0$/, '')}/5`;
       body.appendChild(rating);
     }
     if (type === 'Reviewed' && entry.Content) {
