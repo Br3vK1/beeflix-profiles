@@ -8,7 +8,7 @@ BeeFlix Profiles is a Jellyfin 12 plugin for community profiles built on the rev
 
 Source branch: `feature/community-hub-achievements-v0.6.0`
 
-Development version: `0.6.0.3` (not yet released)
+Development version: `0.6.0.4` (not yet released)
 
 ### Included in this milestone
 
