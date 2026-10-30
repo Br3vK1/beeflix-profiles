@@ -142,28 +142,23 @@ public sealed class ProfilesController : ControllerBase
 
             var events = Plugin.Instance.Configuration.AchievementUnlocks
                 .Where(entry => !entry.Retroactive && visibleUsers.ContainsKey(entry.UserId))
+                .Where(entry => DateTimeOffset.TryParse(entry.UnlockedAt, System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.AssumeUniversal, out _))
+                .Where(entry => AchievementService.GetAchievementName(entry.AchievementId) is not null)
                 .Select(entry =>
                 {
-                    if (!DateTimeOffset.TryParse(entry.UnlockedAt, System.Globalization.CultureInfo.InvariantCulture,
-                        System.Globalization.DateTimeStyles.AssumeUniversal, out var unlockedAt))
-                        return null;
-
+                    var unlockedAt = DateTimeOffset.Parse(entry.UnlockedAt, System.Globalization.CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.AssumeUniversal);
                     var author = visibleUsers[entry.UserId];
-                    var achievementName = AchievementService.GetAchievementName(entry.AchievementId);
-                    if (achievementName is null) return null;
-
-                    return new
-                    {
-                        ActivityType = "AchievementUnlocked",
-                        UserId = author.Id.ToString("N"),
-                        UserName = author.Username,
-                        Timestamp = unlockedAt.ToUnixTimeMilliseconds(),
-                        AchievementId = entry.AchievementId,
-                        AchievementName = achievementName
-                    };
+                    return new AchievementActivityItem(
+                        "AchievementUnlocked",
+                        author.Id.ToString("N"),
+                        author.Username,
+                        unlockedAt.ToUnixTimeMilliseconds(),
+                        entry.AchievementId,
+                        AchievementService.GetAchievementName(entry.AchievementId)!);
                 })
-                .Where(entry => entry is not null)
-                .OrderByDescending(entry => entry!.Timestamp)
+                .OrderByDescending(entry => entry.Timestamp)
                 .Take(limit)
                 .ToArray();
 
@@ -370,6 +365,14 @@ public sealed class ProfilesController : ControllerBase
             || mediaType?.Contains("show", StringComparison.OrdinalIgnoreCase) == true
             || mediaType?.Contains("series", StringComparison.OrdinalIgnoreCase) == true;
     }
+
+    private sealed record AchievementActivityItem(
+        string ActivityType,
+        string UserId,
+        string UserName,
+        long Timestamp,
+        string AchievementId,
+        string AchievementName);
 
     private sealed record ProfileReview(
         string userId,
