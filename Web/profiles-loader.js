@@ -22,19 +22,6 @@
       : '/BeeFlixProfiles/profiles.js?v=0.6.0.2';
 
     script.onload = () => {
-      root.dataset.bfScriptState = 'loaded';
-      if (!window.BeeFlixProfilesPageInitialized) {
-        root.dataset.bfScriptState = 'error';
-        setStatus(root, 'The page loaded, but profile tools did not initialize. Refresh Jellyfin and check the browser console.', true);
-      }
-    };
-
-    script.onerror = () => {
-      root.dataset.bfScriptState = 'error';
-      setStatus(root, 'The profile page loaded, but its JavaScript file could not be fetched. Refresh the page or check the Jellyfin server logs.', true);
-    };
-
-    script.onload = () => {
       root.dataset.bfScriptState = window.BeeFlixProfilesPageInitialized ? 'loaded' : 'error';
       if (!window.BeeFlixProfilesPageInitialized) {
         setStatus(root, 'BeeFlix Community script loaded but did not initialize. Build 0.6.0.2; check the browser console for the exact cause.', true);
