@@ -657,6 +657,65 @@
     }
   }
 
+  function renderAchievementsPage(member, achievementData) {
+    const page = document.createElement('section');
+    page.className = 'bf-card bf-achievements-full-page';
+    const heading = document.createElement('div');
+    heading.className = 'bf-section-heading';
+    const title = document.createElement('h2');
+    title.textContent = member.userName + ' · Achievements';
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'bf-inline-link';
+    back.textContent = '← Back to profile';
+    back.addEventListener('click', () => loadProfile(member, false));
+    heading.append(title, back);
+    const summary = document.createElement('p');
+    summary.className = 'bf-muted';
+    summary.textContent = achievementData
+      ? `${(achievementData.achievements || []).filter(item => item.unlocked).length} of ${(achievementData.achievements || []).length} achievements unlocked · ${achievementData.movieCount || 0} movies watched · ${achievementData.watchedSeriesCount || 0} series watched`
+      : 'Achievement data is unavailable.';
+    const grid = document.createElement('div');
+    grid.className = 'bf-achievement-grid';
+    const achievements = Array.isArray(achievementData?.achievements) ? achievementData.achievements : [];
+    achievements.forEach(item => {
+      const card = document.createElement('article');
+      card.className = 'bf-achievement' + (item.unlocked ? ' is-unlocked' : ' is-locked');
+      const icon = document.createElement('span');
+      icon.className = 'bf-achievement-icon';
+      icon.textContent = item.unlocked ? '🏅' : '🔒';
+      icon.setAttribute('aria-hidden', 'true');
+      const copy = document.createElement('div');
+      copy.className = 'bf-achievement-copy';
+      const name = document.createElement('h3');
+      name.textContent = item.name || 'Achievement';
+      const description = document.createElement('p');
+      description.textContent = item.description || '';
+      const track = document.createElement('div');
+      track.className = 'bf-achievement-track';
+      const fill = document.createElement('span');
+      fill.style.width = `${Math.round(Math.max(0, Math.min(1, Number(item.progress) || 0)) * 100)}%`;
+      track.appendChild(fill);
+      const progress = document.createElement('small');
+      progress.className = 'bf-muted';
+      progress.textContent = item.unlocked
+        ? (item.retroactive ? 'Earned from existing library history' : 'Unlocked')
+        : `${Number(item.currentCount) || 0} / ${Number(item.threshold) || 0}`;
+      copy.append(name, description, track, progress);
+      card.append(icon, copy);
+      grid.appendChild(card);
+    });
+    if (!achievements.length) {
+      const empty = document.createElement('p');
+      empty.className = 'bf-muted';
+      empty.textContent = achievementData ? 'No achievements are available yet.' : 'Achievement data could not be loaded.';
+      grid.appendChild(empty);
+    }
+    page.append(heading, summary, grid);
+    profileContainer.replaceChildren(page);
+    revealProfileContainer();
+  }
+
   function renderProfile(member, stats, reviews, total, isLoadingMore, achievementData, profileActivity = []) {
     const section = document.createElement('section');
     section.className = 'bf-card bf-profile-card';
