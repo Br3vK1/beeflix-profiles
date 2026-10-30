@@ -60,6 +60,11 @@
   function setActiveView(view) {
     activeView = view === 'profile' ? 'profile' : 'community';
     const showProfile = activeView === 'profile';
+    pageRoot.classList.toggle('bf-view-profile', showProfile);
+    const profileSearchbar = profileContainer.querySelector('.bf-profile-searchbar');
+    const picker = pageRoot.querySelector('.bf-member-picker');
+    const pickerHost = showProfile ? profileSearchbar : pageRoot.querySelector('.bf-directory-card .bf-member-picker');
+    if (pickerHost && picker && picker.parentElement !== pickerHost) pickerHost.appendChild(picker);
     profileContainer.hidden = !showProfile;
     feedContainer.hidden = showProfile;
     if (showProfile) {
@@ -727,6 +732,9 @@
     const section = document.createElement('section');
     section.className = 'bf-card bf-profile-card';
 
+    const profileSearchbar = document.createElement('div');
+    profileSearchbar.className = 'bf-profile-searchbar';
+    profileSearchbar.setAttribute('role', 'search');
     const hero = document.createElement('div');
     hero.className = 'bf-profile-hero';
     const backdropLayer = document.createElement('div');
@@ -785,7 +793,13 @@
     share.textContent = 'Share profile link';
     share.addEventListener('click', () => copyText(profileUrl(member)));
     actions.appendChild(share);
-    heroContent.append(header, actions);
+    const heroBrand = document.createElement('p');
+    heroBrand.className = 'bf-profile-hero-brand';
+    const heroBrandIcon = document.createElement('span');
+    heroBrandIcon.className = 'material-icons';
+    heroBrandIcon.textContent = 'groups';
+    heroBrand.append(heroBrandIcon, document.createTextNode('BEEFLIX · COMMUNITY'));
+    heroContent.append(heroBrand, header, actions);
     hero.appendChild(heroContent);
     section.appendChild(hero);
 
@@ -949,7 +963,9 @@
     mainColumn.append(activitySection, history);
     sideColumn.appendChild(achievementSection);
     overview.append(mainColumn, sideColumn);
-    profileContainer.replaceChildren(section, overview);
+    profileContainer.replaceChildren(profileSearchbar, section, overview);
+    const picker = pageRoot.querySelector('.bf-member-picker');
+    if (picker) profileSearchbar.appendChild(picker);
     revealProfileContainer();
   }
 
