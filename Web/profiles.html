@@ -609,8 +609,8 @@
                             font-size: .8rem;
                         }
                         #BeeFlixProfilesPage .bf-profile-overview {
-                            padding: 0 .8rem;
-                            margin-top: .85rem;
+                            padding: 0 .35rem;
+                            margin-top: .65rem;
                         }
                     }
                     @media (max-width: 380px) {
@@ -621,7 +621,7 @@
 
 
 
-                    /* 0.7.3 mobile cinematic profile: let the Jellyfin navigation float over the member backdrop. */
+                    /* 0.7.4 mobile cinematic profile: let the Jellyfin navigation float over the member backdrop. */
                     @media (max-width: 600px) {
                         body.bf-beeflix-profile-active .skinHeader,
                         body.bf-beeflix-profile-active .skinHeader-withBackground {
@@ -662,8 +662,8 @@
                             grid-template-columns: minmax(0, 1fr);
                             gap: .55rem;
                             min-height: 0;
-                            padding: .45rem .9rem .8rem;
-                            background: linear-gradient(180deg, rgba(7,12,21,.28), rgba(7,12,21,.08));
+                            padding: 4.1rem .85rem .75rem;
+                            background: linear-gradient(180deg, rgba(7,12,21,.10), rgba(7,12,21,.28));
                             border-bottom: 1px solid rgba(255,255,255,.12);
                         }
                         #BeeFlixProfilesPage.bf-view-profile .bf-profile-brand-lockup {
@@ -673,12 +673,18 @@
                             display: none;
                         }
                         #BeeFlixProfilesPage.bf-view-profile .bf-profile-searchbar {
-                            min-height: 42px;
-                            max-width: 420px;
+                            width: min(100%, 460px);
+                            min-height: 38px;
+                            max-width: 460px;
                             justify-self: center;
-                            margin: 0;
+                            margin: .1rem auto 0;
+                            padding: .2rem .55rem .2rem .8rem;
                             border-radius: 999px;
-                            background: rgba(13,20,32,.42);
+                            border: 1px solid rgba(255,255,255,.18);
+                            background: rgba(13,20,32,.30);
+                            box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 5px 16px rgba(0,0,0,.10);
+                            backdrop-filter: blur(14px) saturate(135%);
+                            -webkit-backdrop-filter: blur(14px) saturate(135%);
                         }
                         #BeeFlixProfilesPage.bf-view-profile .bf-profile-hero-content {
                             display: flex;
@@ -741,7 +747,7 @@
                     }
 
 
-                    /* 0.7.3: remove the inset card shell so stats become one continuous glass band. */
+                    /* 0.7.4: remove the inset card shell so stats become one continuous glass band. */
                     @media (max-width: 600px) {
                         #BeeFlixProfilesPage.bf-view-profile .bf-profile-card {
                             padding: 0 !important; margin: 0 !important; border: 0 !important;
@@ -764,6 +770,31 @@
                         }
                     }
 
+
+                    /* 0.7.4 mobile: use the phone's available width for profile content cards. */
+                    @media (max-width: 600px) {
+                        #BeeFlixProfilesPage.bf-view-profile .bf-profile-overview {
+                            width: 100%;
+                            box-sizing: border-box;
+                            padding-left: .3rem;
+                            padding-right: .3rem;
+                        }
+                        #BeeFlixProfilesPage.bf-view-profile .bf-profile-overview .bf-card,
+                        #BeeFlixProfilesPage.bf-view-profile .bf-profile-overview .bf-history-card,
+                        #BeeFlixProfilesPage.bf-view-profile .bf-profile-overview .bf-achievements-card {
+                            width: 100%;
+                            box-sizing: border-box;
+                            padding: .75rem;
+                            margin-left: 0;
+                            margin-right: 0;
+                        }
+                        #BeeFlixProfilesPage.bf-view-profile .bf-profile-overview .bf-profile-activity {
+                            width: 100%;
+                            box-sizing: border-box;
+                            padding: .75rem;
+                        }
+                    }
+
 </style>
 
                 <main class="bf-wrap">
@@ -774,7 +805,7 @@
                             <h1>Movies are better shared.</h1>
                             <p class="bf-muted">See what your people have watched, reviewed, and achieved.</p>
                         </div>
-                        <div class="bf-brand-tag"><span class="material-icons">auto_awesome</span> Your crew, your taste <span id="bf-build-version" class="bf-build-version">Build 0.7.3</span></div>
+                        <div class="bf-brand-tag"><span class="material-icons">auto_awesome</span> Your crew, your taste <span id="bf-build-version" class="bf-build-version">Build 0.7.4</span></div>
                     </header>
 
                     <section class="bf-card bf-directory-card" aria-labelledby="bf-profile-lookup-title">
