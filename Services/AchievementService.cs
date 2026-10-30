@@ -53,11 +53,6 @@ public sealed class AchievementService
     {
         ArgumentNullException.ThrowIfNull(user);
 
-        var movieCount = CountWatchedMovies(user);
-        var completedSeriesCount = CountCompletedSeries(user);
-        var now = DateTimeOffset.UtcNow;
-        var userId = user.Id.ToString("N");
-
         lock (ConfigurationLock)
         {
             var plugin = Plugin.Instance ?? throw new InvalidOperationException("BeeFlix Profiles is not initialized.");
@@ -66,19 +61,20 @@ public sealed class AchievementService
             configuration.AchievementUnlocks ??= [];
             configuration.AchievementInitializedUsers ??= [];
 
+            var completedSeriesBefore = configuration.CompletedSeries.Count;
+            var movieCount = CountWatchedMovies(user);
+            var completedSeriesCount = CountCompletedSeries(user);
+            var changed = configuration.CompletedSeries.Count != completedSeriesBefore;
+            var now = DateTimeOffset.UtcNow;
+            var userId = user.Id.ToString("N");
             var previouslyInitialized = configuration.AchievementInitializedUsers.Contains(userId, StringComparer.OrdinalIgnoreCase);
-            var completedSeriesIds = configuration.CompletedSeries
-                .Where(entry => string.Equals(entry.UserId, userId, StringComparison.OrdinalIgnoreCase))
-                .Select(entry => entry.SeriesId)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            var movieDefinitions = MovieMilestones.Select(definition => new { Definition = definition, Count = movieCount });
-            var seriesDefinitions = SeriesMilestones.Select(definition => new { Definition = definition, Count = completedSeriesCount });
+            var allMilestones = MovieMilestones.Select(definition => (Definition: definition, Count: movieCount))
+                .Concat(SeriesMilestones.Select(definition => (Definition: definition, Count: completedSeriesCount)));
 
-            foreach (var milestone in movieDefinitions.Concat(seriesDefinitions))
+            foreach (var milestone in allMilestones)
             {
-                if (milestone.Count < milestone.Definition.Threshold)
-                    continue;
+                if (milestone.Count < milestone.Definition.Threshold) continue;
 
                 var alreadyUnlocked = configuration.AchievementUnlocks.Any(entry =>
                     string.Equals(entry.UserId, userId, StringComparison.OrdinalIgnoreCase)
@@ -93,36 +89,25 @@ public sealed class AchievementService
                         UnlockedAt = now.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
                         Retroactive = !previouslyInitialized
                     });
+                    changed = true;
                 }
             }
 
             if (!previouslyInitialized)
+            {
                 configuration.AchievementInitializedUsers.Add(userId);
+                changed = true;
+            }
 
-            // Completed series are permanent once earned. A later season, a changed
-            // playstate, or removal from the library must not revoke the completion.
             var achievementRows = MovieMilestones.Select(definition => BuildAchievementRow(
                     definition, movieCount, configuration.AchievementUnlocks, userId))
                 .Concat(SeriesMilestones.Select(definition => BuildAchievementRow(
                     definition, completedSeriesCount, configuration.AchievementUnlocks, userId)))
                 .ToArray();
 
-            if (configuration.AchievementUnlocks.Any(entry =>
-                    string.Equals(entry.UserId, userId, StringComparison.OrdinalIgnoreCase))
-                || configuration.CompletedSeries.Any(entry =>
-                    string.Equals(entry.UserId, userId, StringComparison.OrdinalIgnoreCase))
-                || !previouslyInitialized)
-            {
-                plugin.UpdateConfiguration(configuration);
-            }
+            if (changed) plugin.UpdateConfiguration(configuration);
 
-            return new
-            {
-                userId,
-                movieCount,
-                completedSeriesCount,
-                achievements = achievementRows
-            };
+            return new { userId, movieCount, completedSeriesCount, achievements = achievementRows };
         }
     }
 
