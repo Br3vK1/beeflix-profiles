@@ -8,6 +8,14 @@
     "owner": "Br3vK1",
     "versions": [
       {
+        "version": "0.7.3",
+        "changelog": "PREVIEW: Adds a full-bleed cinematic profile header, integrated frosted-glass member search and stats, safer directory navigation for empty profiles, and movie/series-level rotating backdrop artwork. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.7.3-preview/BeeFlixProfiles-jellyfin12.zip",
+        "checksum": "a292f1b613de67e92a8ab50517fe110b",
+        "timestamp": "2026-10-30T20:29:32.407Z"
+      },
+      {
         "version": "0.7.2",
         "changelog": "PREVIEW: Adds a full-bleed cinematic profile header, integrated frosted-glass member search and stats, safer directory navigation for empty profiles, and movie/series-level rotating backdrop artwork. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
         "targetAbi": "12.0.0.0",
@@ -78,14 +86,6 @@
         "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.6.0.0-preview/BeeFlixProfiles-jellyfin12.zip",
         "checksum": "45c3b2c84c09c821bd40b4841c5a3657",
         "timestamp": "2026-10-30T16:46:33.038Z"
-      },
-      {
-        "version": "0.5.1.0",
-        "changelog": "PREVIEW: Adds the user-facing BeeFlix Community page, shareable member profiles, profile statistics, paginated review history, local Jellyfin title/poster resolution, and responsive honey-accent styling. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
-        "targetAbi": "12.0.0.0",
-        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.5.1.0-preview/BeeFlixProfiles-jellyfin12.zip",
-        "checksum": "da7303a9bfc38988595bb2e08c83f9b5",
-        "timestamp": "2026-10-27T20:47:41.891Z"
       }
     ]
   }
