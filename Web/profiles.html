@@ -212,7 +212,38 @@
                         #BeeFlixProfilesPage .bf-poster-frame { flex-basis: 64px; width: 64px; min-height: 96px; }
                         #BeeFlixProfilesPage .bf-review-top { flex-direction: column; align-items: flex-start; gap: .4rem; }
                     }
-                </style>
+                
+                    #BeeFlixProfilesPage .bf-stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+                    #BeeFlixProfilesPage .bf-stat { position: relative; align-items: flex-start; gap: .25rem; }
+                    #BeeFlixProfilesPage .bf-stat-icon { color: var(--bf-accent-strong); font-size: 1.15rem; margin-bottom: .15rem; }
+                    #BeeFlixProfilesPage .bf-profile-overview { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(260px, .9fr); gap: 1rem; align-items: start; margin-top: 1rem; }
+                    #BeeFlixProfilesPage .bf-profile-main, #BeeFlixProfilesPage .bf-profile-sidebar { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+                    #BeeFlixProfilesPage .bf-profile-overview .bf-history-card, #BeeFlixProfilesPage .bf-profile-overview .bf-achievements-card, #BeeFlixProfilesPage .bf-profile-overview .bf-profile-activity { margin-top: 0; min-width: 0; }
+                    #BeeFlixProfilesPage .bf-achievements-card { padding: 1rem; }
+                    #BeeFlixProfilesPage .bf-achievement-preview { display: flex; flex-direction: column; gap: .55rem; }
+                    #BeeFlixProfilesPage .bf-achievement-preview-row { display: flex; align-items: center; gap: .7rem; min-width: 0; padding: .65rem; border-radius: 10px; border: 1px solid var(--jf-palette-divider, rgba(128,128,128,.18)); }
+                    #BeeFlixProfilesPage .bf-achievement-preview-row.is-unlocked { border-color: rgba(242,201,76,.38); background: rgba(242,201,76,.055); }
+                    #BeeFlixProfilesPage .bf-achievement-preview-row .bf-achievement-icon { flex: 0 0 28px; font-size: 1.2rem; }
+                    #BeeFlixProfilesPage .bf-achievement-preview-row .bf-achievement-copy { display: flex; flex-direction: column; gap: .15rem; }
+                    #BeeFlixProfilesPage .bf-achievement-preview-row strong { overflow-wrap: anywhere; font-size: .86rem; }
+                    #BeeFlixProfilesPage .bf-achievement-preview-row small { font-size: .72rem; }
+                    #BeeFlixProfilesPage .bf-inline-link { border: 0; padding: .25rem .15rem; color: var(--bf-accent-strong); background: transparent; font: inherit; font-size: .82rem; font-weight: 800; cursor: pointer; }
+                    #BeeFlixProfilesPage .bf-inline-link:hover { text-decoration: underline; }
+                    #BeeFlixProfilesPage .bf-profile-activity { padding: 1rem; }
+                    #BeeFlixProfilesPage .bf-activity-show-more { display: block; margin: .6rem auto 0; }
+                    #BeeFlixProfilesPage .bf-profile-activity .bf-activity-card { padding: .65rem 0; }
+                    #BeeFlixProfilesPage .bf-profile-activity .bf-activity-avatar-link { display: none; }
+                    #BeeFlixProfilesPage .bf-profile-activity .bf-activity-visual { flex-basis: 42px; width: 42px; height: 62px; }
+                    #BeeFlixProfilesPage .bf-achievements-full-page { margin-top: 1rem; padding: 1.2rem; }
+                    #BeeFlixProfilesPage .bf-achievements-full-page .bf-achievement-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+                    @media (max-width: 900px) {
+                        #BeeFlixProfilesPage .bf-profile-overview { grid-template-columns: minmax(0, 1fr); }
+                        #BeeFlixProfilesPage .bf-profile-sidebar { order: 2; }
+                    }
+                    @media (max-width: 720px) {
+                        #BeeFlixProfilesPage .bf-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+                    }
+</style>
 
                 <main class="bf-wrap">
                     <header class="bf-brand-header">
