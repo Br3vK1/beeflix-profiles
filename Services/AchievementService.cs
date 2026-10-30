@@ -133,7 +133,7 @@ public sealed class AchievementService
 
     private int CountCompletedSeries(User user)
     {
-        var query = new InternalItemsQuery(user)
+        var seriesQuery = new InternalItemsQuery(user)
         {
             IncludeItemTypes = [BaseItemKind.Series],
             Recursive = true,
@@ -141,10 +141,38 @@ public sealed class AchievementService
             EnableTotalRecordCount = false
         };
 
-        var seriesItems = _library.GetItemsResult(query).Items
+        var seriesItems = _library.GetItemsResult(seriesQuery).Items
             .OfType<Series>()
             .Where(series => series.IsVisible(user) && !series.IsVirtualItem)
             .ToArray();
+
+        var episodeQuery = new InternalItemsQuery(user)
+        {
+            IncludeItemTypes = [BaseItemKind.Episode],
+            Recursive = true,
+            IsVirtualItem = false,
+            EnableTotalRecordCount = false
+        };
+
+        // Load the eligible episode set once for this member, then batch-read
+        // playstate. This avoids one database query per series on large libraries.
+        var eligibleEpisodes = _library.GetItemsResult(episodeQuery).Items
+            .OfType<Episode>()
+            .Where(episode => !episode.IsMissingEpisode
+                && !episode.IsVirtualItem
+                && episode.IsVisible(user)
+                && episode.AiredSeasonNumber is > 0
+                && (episode.PremiereDate is null || episode.PremiereDate <= DateTime.UtcNow)
+                && !string.IsNullOrWhiteSpace(episode.SeriesPresentationUniqueKey))
+            .DistinctBy(episode => episode.Id)
+            .ToArray();
+
+        var episodesBySeries = eligibleEpisodes
+            .GroupBy(episode => episode.SeriesPresentationUniqueKey, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
+        var states = eligibleEpisodes.Length > 0
+            ? _userData.GetUserDataBatch(eligibleEpisodes, user)
+            : new Dictionary<Guid, UserItemData>();
 
         var userId = user.Id.ToString("N");
         var plugin = Plugin.Instance ?? throw new InvalidOperationException("BeeFlix Profiles is not initialized.");
@@ -163,23 +191,15 @@ public sealed class AchievementService
 
             try
             {
-                // Missing episodes are excluded by Jellyfin's own series episode
-                // resolver. Specials (season 0) and episodes not yet aired do not
-                // block completion or count as required viewing.
-                var eligibleEpisodes = series.GetEpisodes(user, new DtoOptions(), shouldIncludeMissingEpisodes: false)
-                    .OfType<Episode>()
-                    .Where(episode => !episode.IsMissingEpisode
-                        && !episode.IsVirtualItem
-                        && episode.IsVisible(user)
-                        && episode.AiredSeasonNumber is > 0
-                        && (episode.PremiereDate is null || episode.PremiereDate <= DateTime.UtcNow))
-                    .DistinctBy(episode => episode.Id)
-                    .ToArray();
+                var seriesKey = series.GetPresentationUniqueKey();
+                if (string.IsNullOrWhiteSpace(seriesKey)
+                    || !episodesBySeries.TryGetValue(seriesKey, out var seriesEpisodes)
+                    || seriesEpisodes.Length == 0)
+                {
+                    continue;
+                }
 
-                if (eligibleEpisodes.Length == 0) continue;
-
-                var states = _userData.GetUserDataBatch(eligibleEpisodes, user);
-                if (eligibleEpisodes.All(episode => states.TryGetValue(episode.Id, out var state) && state.Played))
+                if (seriesEpisodes.All(episode => states.TryGetValue(episode.Id, out var state) && state.Played))
                 {
                     configuration.CompletedSeries.Add(new CompletedSeriesRecord
                     {
