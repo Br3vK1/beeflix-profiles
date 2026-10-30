@@ -354,17 +354,27 @@
     if (type === 'Reviewed') verb.textContent = ' reviewed ';
     else if (type === 'Favorited') verb.textContent = ' added to favorites ';
     else if (type === 'Watched') verb.textContent = entry.Completed ? ' finished watching ' : ' watched ';
+    else if (type === 'AchievementUnlocked') verb.textContent = ' unlocked ';
     else verb.textContent = ' had activity on ';
 
     const item = entry.Item || {};
     const itemId = String(item.Id || '');
     const title = document.createElement('a');
     title.className = 'bf-activity-title';
-    title.textContent = String(item.SeriesName
-      ? item.SeriesName + (item.SeasonNumber != null && item.EpisodeNumber != null
-        ? ` · S${item.SeasonNumber}:E${item.EpisodeNumber} · ${item.Name || ''}` : '')
-      : item.Name || 'an unavailable title');
-    if (/^[0-9a-f]{32}$/i.test(itemId)) {
+    title.textContent = type === 'AchievementUnlocked'
+      ? String(entry.AchievementName || 'an achievement')
+      : String(item.SeriesName
+        ? item.SeriesName + (item.SeasonNumber != null && item.EpisodeNumber != null
+          ? ` · S${item.SeasonNumber}:E${item.EpisodeNumber} · ${item.Name || ''}` : '')
+        : item.Name || 'an unavailable title');
+    if (type === 'AchievementUnlocked') {
+      title.href = profileUrl(member);
+      title.title = 'View this member’s achievements';
+      title.addEventListener('click', event => {
+        event.preventDefault();
+        selectMember(member);
+      });
+    } else if (/^[0-9a-f]{32}$/i.test(itemId)) {
       title.href = `#/details?id=${encodeURIComponent(itemId)}`;
       title.title = 'Open in Jellyfin';
     } else {
@@ -410,8 +420,18 @@
       poster.onerror = () => { visual.textContent = '🎬'; };
       visual.appendChild(poster);
     } else {
-      visual.textContent = type === 'Reviewed' ? '★' : type === 'Favorited' ? '♥' : '▶';
-      visual.setAttribute('aria-hidden', 'true');
+      if (type === 'AchievementUnlocked') {
+        visual.href = profileUrl(member);
+        visual.textContent = '🏅';
+        visual.title = 'View this member’s achievements';
+        visual.addEventListener('click', event => {
+          event.preventDefault();
+          selectMember(member);
+        });
+      } else {
+        visual.textContent = type === 'Reviewed' ? '★' : type === 'Favorited' ? '♥' : '▶';
+        visual.setAttribute('aria-hidden', 'true');
+      }
     }
     card.append(avatarLink, body, visual);
     return card;
@@ -470,8 +490,22 @@
     renderCommunityFeed();
     try {
       const endpoint = ApiClient.getUrl(`/JellyfinEnhanced/activity?limit=200`);
-      const data = await ApiClient.ajax({ type: 'GET', url: endpoint, dataType: 'json' });
-      const page = Array.isArray(data.items) ? data.items : [];
+      const [data, beeFlixActivity] = await Promise.all([
+        ApiClient.ajax({ type: 'GET', url: endpoint, dataType: 'json' }),
+        ApiClient.ajax({
+          type: 'GET',
+          url: ApiClient.getUrl('/BeeFlixProfiles/activity/achievements?limit=100'),
+          dataType: 'json'
+        }).catch(error => {
+          console.warn('[BeeFlix Profiles] Achievement activity unavailable:', error);
+          return { items: [] };
+        })
+      ]);
+      const enhancedItems = Array.isArray(data.items) ? data.items : [];
+      const achievementItems = Array.isArray(beeFlixActivity.items) ? beeFlixActivity.items : [];
+      const page = enhancedItems.concat(achievementItems)
+        .sort((a, b) => Number(b.Timestamp || 0) - Number(a.Timestamp || 0))
+        .slice(0, 200);
       activityState = {
         items: append ? activityState.items.concat(page) : page,
         visibleCount: append ? activityState.visibleCount : 50,
