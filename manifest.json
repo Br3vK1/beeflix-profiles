@@ -8,6 +8,14 @@
     "owner": "Br3vK1",
     "versions": [
       {
+        "version": "0.7.0",
+        "changelog": "PREVIEW: Adds a compact member profile dashboard, watched movie and unique series counts, per-member activity with Show more, review metric icons, and a compact achievements sidebar that opens the full achievements view. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.7.0-preview/BeeFlixProfiles-jellyfin12.zip",
+        "checksum": "df18ecd4b8cd7ca5380fe7a4b6841442",
+        "timestamp": "2026-10-30T18:45:17.247Z"
+      },
+      {
         "version": "0.6.0.5",
         "changelog": "PREVIEW: Fixes Community/profile navigation state and duplicate page-script initialization while retaining the activity timeline and achievements. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
         "targetAbi": "12.0.0.0",
@@ -78,14 +86,6 @@
         "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/0.4.0.4/BeeFlixProfiles-jellyfin12.zip",
         "checksum": "9f9a8146ea816f47d2bae8de6f32b504",
         "timestamp": "2026-10-27T17:50:20.099Z"
-      },
-      {
-        "version": "0.4.0.3",
-        "changelog": "Fixes member visibility filtering and displays useful server errors when reviews fail to load. Preview release; test on a non-production server first.",
-        "targetAbi": "12.0.0.0",
-        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/0.4.0.3/BeeFlixProfiles-jellyfin12.zip",
-        "checksum": "92c0211ea1eceb14bdd3446808f5b6ab",
-        "timestamp": "2026-10-27T16:56:14.558Z"
       }
     ]
   }
