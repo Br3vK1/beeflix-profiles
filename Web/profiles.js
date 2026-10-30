@@ -31,7 +31,7 @@
   let isMemberListOpen = false;
   let profileRequestSequence = 0;
   let profileState = { userId: null, total: 0, reviews: [], stats: null };
-  let activityState = { items: [], total: 0, loading: false };
+  let activityState = { items: [], visibleCount: 50, total: 0, loading: false };
 
   function normalizeId(value) {
     return String(value || '').replaceAll('-', '').toLocaleLowerCase();
@@ -440,17 +440,21 @@
       empty.textContent = activityState.loading ? 'Loading recent activity…' : 'No community activity has been recorded yet.';
       list.appendChild(empty);
     } else {
-      activityState.items.forEach(entry => list.appendChild(buildActivityCard(entry)));
+      activityState.items.slice(0, activityState.visibleCount).forEach(entry => list.appendChild(buildActivityCard(entry)));
     }
     section.append(heading, list);
 
-    if (activityState.items.length < activityState.total) {
+    if (activityState.visibleCount < activityState.items.length) {
       const more = document.createElement('button');
       more.type = 'button';
       more.className = 'raised emby-button bf-load-more';
       more.disabled = activityState.loading;
-      more.textContent = activityState.loading ? 'Loading…' : 'Load older activity';
-      more.addEventListener('click', () => loadCommunityFeed(true));
+      more.textContent = 'Load older activity';
+      more.addEventListener('click', () => {
+        activityState.visibleCount = Math.min(activityState.visibleCount + 50, activityState.items.length);
+        renderCommunityFeed();
+        status.textContent = `Showing ${activityState.visibleCount} of ${activityState.items.length} available recent events.`;
+      });
       section.appendChild(more);
     }
     feedContainer.replaceChildren(section);
@@ -464,19 +468,19 @@
     status.textContent = append ? 'Loading older community activity…' : 'Loading recent community activity…';
     status.classList.remove('bf-error');
     renderCommunityFeed();
-    const offset = append ? activityState.items.length : 0;
     try {
-      const endpoint = ApiClient.getUrl(`/JellyfinEnhanced/activity?limit=50`);
+      const endpoint = ApiClient.getUrl(`/JellyfinEnhanced/activity?limit=200`);
       const data = await ApiClient.ajax({ type: 'GET', url: endpoint, dataType: 'json' });
       const page = Array.isArray(data.items) ? data.items : [];
       activityState = {
         items: append ? activityState.items.concat(page) : page,
-        total: append ? Math.max(activityState.total, offset + page.length) : page.length,
+        visibleCount: append ? activityState.visibleCount : 50,
+        total: page.length,
         loading: false
       };
       renderCommunityFeed();
       status.textContent = activityState.items.length
-        ? `Showing ${activityState.items.length} recent community events.`
+        ? `Showing ${Math.min(activityState.visibleCount, activityState.items.length)} of ${activityState.items.length} available recent events${activityState.items.length === 200 ? ' (Enhanced API limit)' : ''}.`
         : 'No community activity is available yet.';
     } catch (error) {
       activityState.loading = false;
@@ -553,18 +557,6 @@
 
     const actions = document.createElement('div');
     actions.className = 'bf-profile-actions';
-    const share = document.createElement('button');
-    share.type = 'button';
-    share.className = 'raised emby-button bf-share-button';
-    share.textContent = 'Share profile link';
-    share.addEventListener('click', () => copyText(profileUrl(member)));
-    actions.appendChild(share);
-    const back = document.createElement('button');
-    back.type = 'button';
-    back.className = 'raised emby-button bf-community-back';
-    back.textContent = '← Community activity';
-    back.addEventListener('click', showCommunity);
-    actions.appendChild(back);
     const back = document.createElement('button');
     back.type = 'button';
     back.className = 'raised emby-button bf-community-back';
