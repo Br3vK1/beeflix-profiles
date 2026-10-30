@@ -1,3 +1,4 @@
+using BeeFlix.Profiles.Services;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;
