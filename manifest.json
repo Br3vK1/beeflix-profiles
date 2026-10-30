@@ -8,6 +8,14 @@
     "owner": "Br3vK1",
     "versions": [
       {
+        "version": "0.6.0.4",
+        "changelog": "PREVIEW: Adds the unified BeeFlix Community activity timeline, permanent movie and completed-series achievements, background unlock detection, and profile achievement displays. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.6.0.4-preview/BeeFlixProfiles-jellyfin12.zip",
+        "checksum": "8dd8a670808ee28d2b7995e1a6a225db",
+        "timestamp": "2026-10-30T17:20:38.947Z"
+      },
+      {
         "version": "0.6.0.3",
         "changelog": "PREVIEW: Adds the unified BeeFlix Community activity timeline, permanent movie and completed-series achievements, background unlock detection, and profile achievement displays. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
         "targetAbi": "12.0.0.0",
@@ -78,14 +86,6 @@
         "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/0.4.0.2/BeeFlixProfiles-jellyfin12.zip",
         "checksum": "a8097f952f367580cef0b9eee3ce442a",
         "timestamp": "2026-10-27T16:39:55.050Z"
-      },
-      {
-        "version": "0.4.0.1",
-        "changelog": "Preview release. Test on a non-production Jellyfin server before installing on BeeFlix.",
-        "targetAbi": "12.0.0.0",
-        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/0.4.0.1/BeeFlixProfiles-jellyfin12.zip",
-        "checksum": "6bbdb06a76ce5cc376219d8605f05e6f",
-        "timestamp": "2026-10-27T16:18:28.821Z"
       }
     ]
   }
