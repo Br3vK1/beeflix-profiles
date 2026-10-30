@@ -119,6 +119,7 @@
     return ApiClient.getUrl(`/Users/${encodeURIComponent(userId)}/Images/Primary?width=${width}&quality=90`);
   }
 
+  // Local SVG fallback keeps member cards consistent when no Jellyfin primary image exists.
   function fallbackAvatarUrl(name) {
     const initials = String(name || '?').trim().split(/\\s+/).slice(0, 2)
       .map(part => part.charAt(0).toLocaleUpperCase()).join('') || '?';
