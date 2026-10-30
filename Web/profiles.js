@@ -26,6 +26,19 @@
 
   window.BeeFlixProfilesPageInitialized = true;
 
+  const buildLabel = $('#bf-build-version');
+  if (buildLabel) {
+    ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('/BeeFlixProfiles/health'), dataType: 'json' })
+      .then(info => {
+        buildLabel.textContent = 'Build ' + String(info.version || 'unknown');
+        buildLabel.title = 'BeeFlix Profiles server build ' + String(info.version || 'unknown');
+      })
+      .catch(error => {
+        buildLabel.textContent = 'Build 0.6.0.2 · health check failed';
+        buildLabel.title = 'The page script is running, but the health endpoint could not be reached: ' + String(error);
+      });
+  }
+
   let members = [];
   let selectedMember = null;
   let isMemberListOpen = false;
