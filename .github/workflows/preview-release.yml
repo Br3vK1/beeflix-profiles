@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   publish-preview:
-    # Build, package, and catalog publication happen only after this exact gated commit. Full-bleed cinematic profile redesign with integrated glass navigation and media artwork.
+    # Build, package, and catalog publication happen only after this exact gated commit. 0.7.3 preview gate: publish the corrected versioned build after source updates.
     # This gate prevents normal feature pushes from publishing a release.
     if: ${{ github.event.head_commit.message == 'Publish 0.7.3 preview from CI' }}
     runs-on: ubuntu-latest
