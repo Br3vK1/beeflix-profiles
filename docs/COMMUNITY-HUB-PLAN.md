@@ -2,29 +2,53 @@
 
 ## Goal
 
-Turn BeeFlix Profiles into a feed-first community hub while preserving Jellyfin Enhanced as the source of truth for reviews and Jellyfin as the source of truth for playback state.
+Turn BeeFlix Profiles into BeeFlix's social activity hub while preserving Jellyfin Enhanced as the source of truth for reviews, Jellyfin as the source of truth for playback state, and BeeFlix as the owner of its achievement/cosmetic layer.
 
 This work is being developed on `feature/community-hub-achievements-v0.6.0`. The existing `feature/shareable-member-profiles-v0.5.0` branch and `v0.5.1.0-preview` release are not part of this work.
 
 ## Product direction
 
-- Community Activity is the landing view.
-- Members directory and individual profiles are secondary destinations.
-- Feed cards identify the author, title, media type, rating, review text, and date.
-- Profiles show watched movies, completed TV series, review totals, achievements, and equipped cosmetics.
-- Movie and TV achievements have separate progressions.
-- Achievements are retroactive and permanent once earned.
-- Cosmetic rewards are earned through activity, selectable by the member, and purely visual.
+The Community tab opens to a unified, chronological activity timeline across all members visible to the viewer. It should feel like the social activity stream in Jellyfin Enhanced, but be BeeFlix-branded and extensible with BeeFlix achievements.
 
-## Existing sources of truth
+### Landing page layout
+
+1. **Profile search at the top:** searchable member picker/directory. Selecting a result opens that member's profile. Existing shareable profile URLs remain supported.
+2. **Community navigation:** Activity (default), Members, and profile detail. The directory is a secondary destination, not the default landing experience.
+3. **Unified timeline:** one newest-first stream, not separate Watch History and Reviews sections. Each row has the member avatar/name, activity verb, title or achievement, timestamp, and relevant poster/badge visual.
+4. **Refresh and pagination:** refresh recent events and load older activity in bounded pages.
+5. **Optional live-now area:** active sessions can be shown separately or as a clearly marked live strip. Live playback state must not be confused with a completed watch or repeatedly flood the historical timeline.
+
+### Activity types
+
+- **Started/continued/completed watching:** derive from Jellyfin Enhanced's activity history where available. Distinguish progress from completed playback.
+- **Reviewed/rated:** use Jellyfin Enhanced's review store; include rating and review excerpt where present.
+- **Achievement unlocked:** BeeFlix-generated event, shown when a member crosses a permanent achievement threshold.
+- **Future-compatible:** favorites and other supported Enhanced activity types can be included when enabled and useful.
+
+### Hyperlink behavior
+
+- Every member name/avatar links to that member's BeeFlix profile.
+- Every movie, series, season, or episode title/poster links to the corresponding Jellyfin detail page.
+- Every achievement badge links to the member's achievements/profile section or achievement detail.
+- Search results, profile cards, and activity cards should be keyboard-accessible links/buttons with clear focus states.
+
+## Existing sources of truth and integration
+
+### Jellyfin Enhanced activity
+
+The current Jellyfin Enhanced Activity Feed implementation exposes `/JellyfinEnhanced/activity` and `/JellyfinEnhanced/active-streams/sessions`. Its activity row model includes `ActivityType`, `UserId`, `UserName`, `UserHasPrimaryImage`, Unix-millisecond `Timestamp`, item summary, nullable `Rating`/`Content`, `Completed`, and `Progress`.
+
+The existing Enhanced renderer separates active streams, watch history, and reviews/favorites into sections. BeeFlix should investigate and, where compatible, consume the Enhanced activity API rather than duplicate its watch-event capture/storage. BeeFlix's renderer will merge supported event types into one chronological timeline. Confirm the installed Enhanced version's route contract and response shape before coding against it; do not assume every version has identical endpoints.
+
+Enhanced's activity builder applies user visibility and item-access checks. BeeFlix must not bypass those checks. If consuming the API as the authenticated viewer, retain that server-side filtering. If building a BeeFlix-side merged feed from lower-level stores, reproduce the same effective filtering for member visibility and library access. Fail closed on uncertain privacy state.
 
 ### Reviews
 
 Continue reading reviews from Jellyfin Enhanced's existing review store. Do not create a second review database and do not modify TMDB/IMDb ratings or metadata.
 
-The current controller discovers Enhanced's active plugin instance and its `UserConfigurationManager.GetAllReviews()` method through reflection. The current review endpoint already applies hidden/disabled-member visibility checks. A future feed endpoint must use the same policy and must not expose activity from members who are not visible to the requesting viewer.
+The current controller discovers Enhanced's active plugin instance and its `UserConfigurationManager.GetAllReviews()` method through reflection. The current review endpoint already applies hidden/disabled-member visibility checks. Feed and profile APIs must share the same policy so copied URLs cannot bypass it.
 
-### Playback history
+### Playback history and achievements
 
 Jellyfin 12 exposes `IUserDataManager.GetUserData(User user, BaseItem item)`, returning `UserItemData`. The user data model includes `Played`, `PlayCount`, `LastPlayedDate`, and `PlaybackPositionTicks`. `IUserDataManager` also exposes batch retrieval with `GetUserDataBatch(IReadOnlyList<BaseItem> items, User user)`.
 
@@ -65,6 +89,10 @@ A series counts once, not once per episode. Completion must be based on its elig
 
 Before shipping series counts, explicitly define and test how specials, unaired episodes, missing episodes, alternate versions, and newly added episodes affect completion. A newly released season must not silently revoke an already-earned achievement. The implementation should distinguish a series that was complete at the time it was counted from one that is still in progress, or use a clearly documented eligibility policy that keeps earned milestones stable.
 
+### Achievement activity events
+
+When an achievement is newly earned, generate a BeeFlix activity event that can appear in the unified feed. Avoid generating duplicate unlock events on every page load. Existing users should receive retroactive unlocks, but the product should distinguish initial backfill from new unlock moments so a first install does not flood the feed with years of old milestones.
+
 ## Cosmetics
 
 Initial reward categories:
@@ -79,10 +107,10 @@ Persist only BeeFlix-owned cosmetic selections/unlock metadata. Do not duplicate
 
 ## Delivery sequence
 
-1. **Data and privacy foundation:** inspect Jellyfin 12 query/playstate behavior; define tested movie and series counting rules; factor shared member visibility logic so feed and profile APIs cannot drift.
-2. **Community feed:** add a paginated chronological endpoint over Enhanced reviews and make the feed the default page.
-3. **Navigation and profiles:** add Feed / Members navigation and profile deep links without removing existing shareable URLs.
-4. **Watch stats and achievements:** add movie and completed-series counts, milestone progress, and retroactive unlock calculations.
+1. **Data and privacy foundation:** inspect Enhanced activity API compatibility and Jellyfin 12 query/playstate behavior; factor shared member visibility checks.
+2. **Unified activity feed:** implement the BeeFlix timeline, member search at the top, hyperlinks, refresh, and pagination. Reuse Enhanced watch/review activity where possible.
+3. **Navigation and profiles:** Activity default, Members directory secondary, clickable profile deep links, preserve current shareable URLs.
+4. **Watch stats and achievements:** add movie and completed-series counts, milestone progress, retroactive unlock calculations, and BeeFlix achievement activity events.
 5. **Cosmetics:** add persistence, unlock mapping, equipment API, and customization UI.
 6. **Validation:** JavaScript syntax checks, .NET 10 build, API/privacy tests where practical, and manual Jellyfin 12 verification before any release.
 
@@ -92,4 +120,4 @@ Persist only BeeFlix-owned cosmetic selections/unlock metadata. Do not duplicate
 - No changes to Jellyfin Enhanced's review data.
 - No external TMDB/IMDb score manipulation.
 - No public exposure of hidden/disabled member activity.
-- No duplicate watch-history database.
+- No duplicate watch-history database or duplicate Enhanced watch-event capture.
