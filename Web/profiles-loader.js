@@ -52,4 +52,4 @@
   scanForPage();
 })();
 
-// Release gate: 0.7.0 preview candidate.
+// Release gate: publish the latest 0.7.0 preview candidate.
