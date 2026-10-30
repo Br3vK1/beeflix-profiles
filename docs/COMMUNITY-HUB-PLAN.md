@@ -15,7 +15,7 @@ The Community tab opens to a unified, chronological activity timeline across all
 1. **Profile search at the top:** searchable member picker/directory. Selecting a result opens that member's profile. Existing shareable profile URLs remain supported.
 2. **Community navigation:** Activity (default), Members, and profile detail. The directory is a secondary destination, not the default landing experience.
 3. **Unified timeline:** one newest-first stream, not separate Watch History and Reviews sections. Each row has the member avatar/name, activity verb, title or achievement, timestamp, and relevant poster/badge visual.
-4. **Refresh and pagination:** refresh recent events and load older activity in bounded pages.
+4. **Refresh and progressive reveal:** refresh recent events and reveal older entries from the fetched batch. The current Enhanced endpoint accepts a `limit` (maximum 200) but does not expose an offset cursor, so true server-side pagination requires a later BeeFlix-side paging strategy.
 5. **No live presence in Community:** do not show active sessions, currently-watching indicators, or live-presence polling to regular members. Live session visibility remains an administrator function in Jellyfin Enhanced's existing admin tools.
 
 ### Activity types
@@ -36,9 +36,9 @@ The Community tab opens to a unified, chronological activity timeline across all
 
 ### Jellyfin Enhanced activity
 
-The current Jellyfin Enhanced Activity Feed implementation exposes `/JellyfinEnhanced/activity`; Enhanced also has a separate `/JellyfinEnhanced/active-streams/sessions` endpoint for live sessions. BeeFlix Community must not consume or display that live-session endpoint. Its activity row model includes `ActivityType`, `UserId`, `UserName`, `UserHasPrimaryImage`, Unix-millisecond `Timestamp`, item summary, nullable `Rating`/`Content`, `Completed`, and `Progress`.
+The current Jellyfin Enhanced Activity Feed implementation exposes `/JellyfinEnhanced/activity?limit=50` (limit clamped to 1–200; response `{ items: [...] }`). It requires an authenticated existing Jellyfin user and returns 404 when Activity Feed is disabled. Its row model includes `ActivityType`, `UserId`, `UserName`, `UserHasPrimaryImage`, Unix-millisecond `Timestamp`, item summary, nullable `Rating`/`Content`, `Completed`, and `Progress`.
 
-The existing Enhanced renderer separates active streams, watch history, and reviews/favorites into sections. BeeFlix should investigate and, where compatible, consume the historical activity API rather than duplicate its watch-event capture/storage. BeeFlix's renderer will merge supported historical event types into one chronological timeline. Live-session visibility is deliberately excluded from the member-facing Community experience; administrators can continue using Enhanced's existing admin tools. Confirm the installed Enhanced version's route contract and response shape before coding against it; do not assume every version has identical endpoints.
+The existing Enhanced renderer separates active streams, watch history, and reviews/favorites into sections. BeeFlix consumes only the historical activity API and merges supported historical event types into one chronological timeline. The endpoint applies per-viewer filtering for hidden/disabled authors and library access; its `ActivityFeedOwnOnlyForNonAdmins` option defaults to false in the inspected Enhanced version. Live-session visibility is deliberately excluded from the member-facing Community experience; administrators can continue using their existing live-stream plugin and Enhanced admin tools. Confirm the installed Enhanced version's route contract and response shape before coding against it; do not assume every version has identical endpoints.
 
 Enhanced's activity builder applies user visibility and item-access checks. BeeFlix must not bypass those checks. If consuming the API as the authenticated viewer, retain that server-side filtering. If building a BeeFlix-side merged feed from lower-level stores, reproduce the same effective filtering for member visibility and library access. Fail closed on uncertain privacy state.
 
@@ -108,7 +108,7 @@ Persist only BeeFlix-owned cosmetic selections/unlock metadata. Do not duplicate
 ## Delivery sequence
 
 1. **Data and privacy foundation:** inspect Enhanced historical activity API compatibility and Jellyfin 12 query/playstate behavior; factor shared member visibility checks. Explicitly exclude live-session data from Community.
-2. **Unified activity feed:** implement the BeeFlix timeline, member search at the top, hyperlinks, refresh, and pagination. Reuse Enhanced watch/review activity where possible.
+2. **Unified activity feed:** implemented initial BeeFlix timeline UI consuming Enhanced historical activity, with member/profile and media links, refresh, and progressive reveal within the newest 200 events. Next: validate in Jellyfin, then add BeeFlix achievement events and true paging if needed.
 3. **Navigation and profiles:** Activity default, Members directory secondary, clickable profile deep links, preserve current shareable URLs.
 4. **Watch stats and achievements:** add movie and completed-series counts, milestone progress, retroactive unlock calculations, and BeeFlix achievement activity events.
 5. **Cosmetics:** add persistence, unlock mapping, equipment API, and customization UI.
