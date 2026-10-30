@@ -1033,11 +1033,13 @@
     const cachedStats = append && isSameProfile ? profileState.stats : null;
     const cachedTotal = append && isSameProfile ? profileState.total : 0;
     const cachedAchievements = append && isSameProfile ? profileState.achievements : null;
+    const cachedActivity = append && isSameProfile ? (profileState.activity || []) : [];
 
     status.textContent = append
       ? `Loading more of ${member.userName}’s reviews…`
       : `Loading ${member.userName}’s profile…`;
     status.classList.remove('bf-error');
+
     if (!append) {
       profileContainer.replaceChildren();
       const loading = document.createElement('section');
@@ -1046,49 +1048,81 @@
       loading.textContent = `Loading ${member.userName}’s BeeFlix profile…`;
       profileContainer.appendChild(loading);
     } else if (isSameProfile) {
-      renderProfile(member, cachedStats, existingReviews, cachedTotal, true, cachedAchievements, profileState.activity || []);
+      renderProfile(member, cachedStats, existingReviews, cachedTotal, true, cachedAchievements, cachedActivity);
     }
 
     try {
       const endpoint = ApiClient.getUrl(`/BeeFlixProfiles/users/${encodeURIComponent(id)}/reviews?limit=50&offset=${offset}`);
-      const [data, achievementData, activityData, achievementActivityData] = await Promise.all([
-        ApiClient.ajax({ type: 'GET', url: endpoint, dataType: 'json' }),
-        append && cachedAchievements
-          ? Promise.resolve(cachedAchievements)
-          : ApiClient.ajax({
-              type: 'GET',
-              url: ApiClient.getUrl(`/BeeFlixProfiles/users/${encodeURIComponent(id)}/achievements`),
-              dataType: 'json'
-            }).catch(error => {
-              console.warn('[BeeFlix Profiles] Achievement data unavailable:', error);
-              return null;
-            }),
-        append ? Promise.resolve({ items: profileState.activity || [] }) :
-          ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('/JellyfinEnhanced/activity?limit=200'), dataType: 'json' })
-            .catch(error => { console.warn('[BeeFlix Profiles] Profile activity unavailable:', error); return { items: [] }; }),
-        append ? Promise.resolve({ items: [] }) :
-          ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('/BeeFlixProfiles/activity/achievements?limit=200'), dataType: 'json' })
-            .catch(error => { console.warn('[BeeFlix Profiles] Profile achievement activity unavailable:', error); return { items: [] }; })
-      ]);
+      // Reviews are the only required profile request. Optional integrations must
+      // never hold the profile hostage, especially on slower mobile connections.
+      const reviewsPromise = ApiClient.ajax({ type: 'GET', url: endpoint, dataType: 'json' });
+      const achievementsPromise = append && cachedAchievements
+        ? Promise.resolve(cachedAchievements)
+        : ApiClient.ajax({
+            type: 'GET',
+            url: ApiClient.getUrl(`/BeeFlixProfiles/users/${encodeURIComponent(id)}/achievements`),
+            dataType: 'json'
+          }).catch(error => {
+            console.warn('[BeeFlix Profiles] Achievement data unavailable:', error);
+            return null;
+          });
+
+      const [data, achievementData] = await Promise.all([reviewsPromise, achievementsPromise]);
       if (requestId !== profileRequestSequence) return;
 
       const page = Array.isArray(data.reviews) ? data.reviews : [];
       const stats = data.stats || cachedStats;
       const total = Number.isFinite(Number(data.total)) ? Number(data.total) : cachedTotal;
       const combinedReviews = append ? existingReviews.concat(page) : page;
-      const profileActivity = append
-        ? (profileState.activity || [])
-        : [...(Array.isArray(activityData.items) ? activityData.items : []),
-           ...(Array.isArray(achievementActivityData.items) ? achievementActivityData.items : [])]
-          .filter(entry => normalizeId(entry.UserId || entry.userId) === normalizeId(id))
-          .sort((a, b) => Number(b.Timestamp || b.timestamp || 0) - Number(a.Timestamp || a.timestamp || 0))
-          .slice(0, 50);
-      profileState = { userId: id, total, reviews: combinedReviews, stats, achievements: achievementData, activity: profileActivity };
+      profileState = {
+        userId: id, total, reviews: combinedReviews, stats,
+        achievements: achievementData, activity: cachedActivity
+      };
 
-      const heroBackdropIds = await resolveHeroBackdropIds(profileActivity, combinedReviews);
-      if (requestId !== profileRequestSequence) return;
-      renderProfile(member, stats, combinedReviews, total, false, achievementData, profileActivity, heroBackdropIds);
+      // Paint the complete profile shell immediately. Feed integrations and
+      // backdrop lookups are deliberately deferred until after first render.
+      renderProfile(member, stats, combinedReviews, total, false, achievementData, cachedActivity, []);
       status.textContent = `Showing ${combinedReviews.length} of ${total} visible reviews for ${member.userName}.`;
+
+      if (!append) {
+        const activityPromise = ApiClient.ajax({
+          type: 'GET', url: ApiClient.getUrl('/JellyfinEnhanced/activity?limit=200'), dataType: 'json'
+        }).catch(error => {
+          console.warn('[BeeFlix Profiles] Profile activity unavailable:', error);
+          return { items: [] };
+        });
+        const achievementActivityPromise = ApiClient.ajax({
+          type: 'GET', url: ApiClient.getUrl('/BeeFlixProfiles/activity/achievements?limit=200'), dataType: 'json'
+        }).catch(error => {
+          console.warn('[BeeFlix Profiles] Profile achievement activity unavailable:', error);
+          return { items: [] };
+        });
+
+        Promise.all([activityPromise, achievementActivityPromise]).then(async ([activityData, achievementActivityData]) => {
+          if (requestId !== profileRequestSequence) return;
+          const profileActivity = [
+            ...(Array.isArray(activityData.items) ? activityData.items : []),
+            ...(Array.isArray(achievementActivityData.items) ? achievementActivityData.items : [])
+          ].filter(entry => normalizeId(entry.UserId || entry.userId) === normalizeId(id))
+            .sort((a, b) => Number(b.Timestamp || b.timestamp || 0) - Number(a.Timestamp || a.timestamp || 0))
+            .slice(0, 50);
+          profileState = { ...profileState, activity: profileActivity };
+          const heroBackdropIds = await resolveHeroBackdropIds(profileActivity, combinedReviews);
+          if (requestId !== profileRequestSequence) return;
+          renderProfile(member, stats, combinedReviews, total, false, achievementData, profileActivity, heroBackdropIds);
+          status.textContent = `Showing ${combinedReviews.length} of ${total} visible reviews for ${member.userName}.`;
+        }).catch(error => {
+          console.warn('[BeeFlix Profiles] Deferred profile enrichment failed:', error);
+        });
+      } else {
+        const heroBackdropIds = await resolveHeroBackdropIds(cachedActivity, combinedReviews).catch(error => {
+          console.warn('[BeeFlix Profiles] Hero artwork unavailable:', error);
+          return [];
+        });
+        if (requestId === profileRequestSequence && heroBackdropIds.length) {
+          renderProfile(member, stats, combinedReviews, total, false, achievementData, cachedActivity, heroBackdropIds);
+        }
+      }
     } catch (error) {
       if (requestId !== profileRequestSequence) return;
       console.error('[BeeFlix Profiles] Failed to load profile:', error);
@@ -1097,7 +1131,7 @@
       status.textContent = message;
       status.classList.add('bf-error');
       if (append && isSameProfile) {
-        renderProfile(member, cachedStats, existingReviews, cachedTotal, false, cachedAchievements, profileState.activity || []);
+        renderProfile(member, cachedStats, existingReviews, cachedTotal, false, cachedAchievements, cachedActivity);
       } else {
         const errorCard = document.createElement('section');
         errorCard.className = 'bf-card bf-profile-error bf-error';
