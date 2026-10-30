@@ -285,6 +285,10 @@
                       #BeeFlixProfilesPage .bf-hero-backdrop { animation: none; }
                       #BeeFlixProfilesPage .bf-hero-backdrop:first-child { opacity: 1; }
                     }
+                    /* Keep the image, scrim, and profile content in a visible layered stack. */
+                    #BeeFlixProfilesPage .bf-hero-backdrops { z-index: 0; }
+                    #BeeFlixProfilesPage .bf-profile-hero::after { z-index: 1; }
+                    #BeeFlixProfilesPage .bf-profile-hero-content { z-index: 2; }
 </style>
 
                 <main class="bf-wrap">
