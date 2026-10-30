@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   publish-preview:
+    # Build, package, and catalog publication happen only after this exact gated commit.
     # This gate prevents normal feature pushes from publishing a release.
     if: ${{ github.event.head_commit.message == 'Publish 0.6.0.0 preview from CI' }}
     runs-on: ubuntu-latest
