@@ -140,7 +140,8 @@ public sealed class ProfilesController : ControllerBase
                 .Where(user => isAdmin || user.Id == viewerId || !IsHiddenOrDisabled(user))
                 .ToDictionary(user => user.Id.ToString("N"), StringComparer.OrdinalIgnoreCase);
 
-            var events = Plugin.Instance.Configuration.AchievementUnlocks
+            var unlockRecords = Plugin.Instance.Configuration.AchievementUnlocks ?? [];
+            var events = unlockRecords
                 .Where(entry => !entry.Retroactive && visibleUsers.ContainsKey(entry.UserId))
                 .Where(entry => DateTimeOffset.TryParse(entry.UnlockedAt, System.Globalization.CultureInfo.InvariantCulture,
                     System.Globalization.DateTimeStyles.AssumeUniversal, out _))
