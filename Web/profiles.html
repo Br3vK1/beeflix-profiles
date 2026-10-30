@@ -396,6 +396,30 @@
                         #BeeFlixProfilesPage .bf-stat-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
                     }
 
+                    /* Ensure hero's own padding cannot inset the metric band at any breakpoint. */
+                    #BeeFlixProfilesPage .bf-profile-hero {
+                        padding: 0 !important;
+                    }
+                    #BeeFlixProfilesPage .bf-profile-hero > .bf-profile-hero-content {
+                        padding: clamp(2rem, 6vw, 6rem);
+                    }
+                    #BeeFlixProfilesPage .bf-profile-hero > .bf-stat-grid {
+                        align-self: stretch; flex: 0 0 auto;
+                        width: calc(100% + 2px); max-width: none;
+                        margin: 0 0 -1px -1px; padding: 1px 0 0;
+                        border-radius: 0 0 23px 23px;
+                        overflow: hidden;
+                    }
+                    @media (max-width: 600px) {
+                        #BeeFlixProfilesPage .bf-profile-hero > .bf-profile-hero-content {
+                            padding: 2rem 1rem;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-hero > .bf-stat-grid {
+                            width: calc(100% + 2px); margin-left: -1px;
+                            border-radius: 0 0 16px 16px;
+                        }
+                    }
+
                     /* 0.7.2 stats refinement: full-bleed, high-visibility metric band */
                     #BeeFlixProfilesPage .bf-profile-hero > .bf-stat-grid {
                         display: grid; width: 100%; max-width: none; box-sizing: border-box;
