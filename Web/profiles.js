@@ -119,6 +119,29 @@
     return ApiClient.getUrl(`/Users/${encodeURIComponent(userId)}/Images/Primary?width=${width}&quality=90`);
   }
 
+  function fallbackAvatarUrl(name) {
+    const initials = String(name || '?').trim().split(/\\s+/).slice(0, 2)
+      .map(part => part.charAt(0).toLocaleUpperCase()).join('') || '?';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#f4d35e"/><stop offset="1" stop-color="#d9a928"/>
+      </linearGradient></defs>
+      <rect width="96" height="96" rx="48" fill="url(#g)"/>
+      <circle cx="48" cy="35" r="17" fill="#252b38" opacity=".92"/>
+      <path d="M15 86c2-20 15-31 33-31s31 11 33 31" fill="#252b38" opacity=".92"/>
+      <text x="48" y="91" text-anchor="middle" font-family="Arial,sans-serif" font-size="1" fill="#252b38">${initials}</text>
+    </svg>`;
+    return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+  }
+
+  function useFallbackAvatar(image, name) {
+    image.onerror = () => {
+      image.onerror = null;
+      image.src = fallbackAvatarUrl(name);
+      image.classList.add('bf-avatar-fallback');
+    };
+  }
+
   function setPickerOpen(open) {
     isMemberListOpen = open;
     pickerMenu.hidden = !open;
@@ -158,10 +181,7 @@
       image.alt = '';
       image.loading = 'lazy';
       image.src = avatarUrl(member.userId, 96);
-      image.onerror = () => {
-        image.removeAttribute('src');
-        image.style.visibility = 'hidden';
-      };
+      useFallbackAvatar(image, member.userName);
 
       const name = document.createElement('span');
       name.className = 'bf-member-name';
@@ -178,6 +198,7 @@
     selectedName.textContent = member.userName;
     selectedAvatar.src = avatarUrl(member.userId, 96);
     selectedAvatar.alt = '';
+    useFallbackAvatar(selectedAvatar, member.userName);
     selectedAvatar.hidden = false;
     setPickerOpen(false);
     renderMemberList(memberSearch.value);
@@ -333,7 +354,7 @@
     avatar.alt = '';
     avatar.loading = 'lazy';
     avatar.src = avatarUrl(member.userId, 96);
-    avatar.onerror = () => { avatar.style.visibility = 'hidden'; };
+    useFallbackAvatar(avatar, member.userName);
     avatarLink.appendChild(avatar);
 
     const body = document.createElement('div');
@@ -576,7 +597,7 @@
     avatar.className = 'bf-avatar';
     avatar.alt = '';
     avatar.src = avatarUrl(member.userId, 180);
-    avatar.onerror = () => { avatar.style.visibility = 'hidden'; };
+    useFallbackAvatar(avatar, member.userName);
 
     const identity = document.createElement('div');
     identity.className = 'bf-profile-identity';
