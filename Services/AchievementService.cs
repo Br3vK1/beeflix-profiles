@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
@@ -15,7 +14,8 @@ namespace BeeFlix.Profiles.Services;
 public sealed class AchievementService
 {
     private static readonly object ConfigurationLock = new();
-    private readonly ConcurrentDictionary<Guid, DateTimeOffset> _lastEventEvaluation = new();
+    private readonly object _eventEvaluationLock = new();
+    private readonly Dictionary<Guid, DateTimeOffset> _lastEventEvaluation = new();
 
     private static readonly AchievementDefinition[] MovieMilestones =
     [
@@ -65,26 +65,16 @@ public sealed class AchievementService
         }
 
         var now = DateTimeOffset.UtcNow;
-        var shouldEvaluate = false;
-        _lastEventEvaluation.AddOrUpdate(
-            args.UserId,
-            _ =>
+        lock (_eventEvaluationLock)
+        {
+            if (_lastEventEvaluation.TryGetValue(args.UserId, out var previous)
+                && now - previous < TimeSpan.FromSeconds(60))
             {
-                shouldEvaluate = true;
-                return now;
-            },
-            (_, previous) =>
-            {
-                if (now - previous >= TimeSpan.FromSeconds(60))
-                {
-                    shouldEvaluate = true;
-                    return now;
-                }
+                return;
+            }
 
-                return previous;
-            });
-
-        if (!shouldEvaluate) return;
+            _lastEventEvaluation[args.UserId] = now;
+        }
 
         _ = Task.Run(() =>
         {
