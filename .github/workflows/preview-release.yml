@@ -68,7 +68,7 @@ jobs:
           else
             gh release create "$TAG_NAME" ./BeeFlixProfiles-jellyfin12.zip \
               --target "$GITHUB_SHA" \
-              --title "BeeFlix Profiles 0.5.1.0 Preview" \
+              --title "BeeFlix Profiles 0.6.0.0 Preview" \
               --prerelease \
               --notes-file release-notes.md
           fi
@@ -89,13 +89,13 @@ jobs:
           const file = 'manifest.json';
           const pluginGuid = 'db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21';
           const version = '0.6.0.0';
-          const releaseUrl = 'https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.5.1.0-preview/BeeFlixProfiles-jellyfin12.zip';
+          const releaseUrl = 'https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.6.0.0-preview/BeeFlixProfiles-jellyfin12.zip';
           let manifest = JSON.parse(fs.readFileSync(file, 'utf8'));
           let plugin = manifest.find(p => p.guid === pluginGuid);
           if (!plugin) throw new Error('BeeFlix Profiles entry was not found in the plugin catalog.');
           const entry = {
             version,
-            changelog: 'PREVIEW: Adds the user-facing BeeFlix Community page, shareable member profiles, profile statistics, paginated review history, local Jellyfin title/poster resolution, and responsive honey-accent styling. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.',
+            changelog: 'PREVIEW: Adds the unified BeeFlix Community activity timeline, permanent movie and completed-series achievements, background unlock detection, and profile achievement displays. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.',
             targetAbi: '12.0.0.0',
             sourceUrl: releaseUrl,
             checksum: process.env.PLUGIN_MD5,
@@ -110,7 +110,7 @@ jobs:
         working-directory: catalog-repo
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG_NAME: v0.5.1.0-preview
+          TAG_NAME: v0.6.0.0-preview
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
