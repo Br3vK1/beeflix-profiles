@@ -2,7 +2,7 @@ name: Publish BeeFlix Profiles Preview
 
 on:
   push:
-    branches: ["feature/shareable-member-profiles-v0.5.0"]
+    branches: ["feature/community-hub-achievements-v0.6.0"]
 
 permissions:
   contents: write
@@ -10,7 +10,7 @@ permissions:
 jobs:
   publish-preview:
     # This gate prevents normal feature pushes from publishing a release.
-    if: ${{ github.event.head_commit.message == 'Publish 0.5.1.0 preview from CI' }}
+    if: ${{ github.event.head_commit.message == 'Publish 0.6.0.0 preview from CI' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out tested source
@@ -31,7 +31,7 @@ jobs:
         run: dotnet restore BeeFlix.Profiles.csproj
 
       - name: Build and publish
-        run: dotnet publish BeeFlix.Profiles.csproj --configuration Release --output ./publish -p:Version="0.5.1.0" -p:AssemblyVersion="0.5.1.0" -p:FileVersion="0.5.1.0"
+        run: dotnet publish BeeFlix.Profiles.csproj --configuration Release --output ./publish -p:Version="0.6.0.0" -p:AssemblyVersion="0.6.0.0" -p:FileVersion="0.6.0.0"
 
       - name: Package plugin and calculate catalog checksum
         shell: bash
@@ -43,7 +43,7 @@ jobs:
           {
             "guid": "db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21",
             "name": "BeeFlix Profiles",
-            "version": "0.5.1.0",
+            "version": "0.6.0.0",
             "targetAbi": "12.0.0.0"
           }
           EOF
@@ -53,18 +53,18 @@ jobs:
       - name: Publish or update GitHub preview release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG_NAME: v0.5.1.0-preview
+          TAG_NAME: v0.6.0.0-preview
         shell: bash
         run: |
           set -euo pipefail
           cat > release-notes.md <<'EOF'
-          Preview build for BeeFlix Community: user-facing Jellyfin menu integration, shareable member profiles, review statistics, paginated review history, local Jellyfin title/poster matching, and responsive BeeFlix styling.
+          Preview build for BeeFlix Community: unified historical activity from Jellyfin Enhanced, permanent movie and completed-series milestones, background unlock detection, and profile achievement displays.
 
-          Requires compatible Jellyfin 12 builds of Plugin Pages and File Transformation. CI build passed, but live Jellyfin behavior still needs smoke-testing. This version is listed in the BeeFlix plugin catalog as a preview.
+          Requires compatible Jellyfin 12 builds of Plugin Pages and File Transformation. The build is gated by JavaScript syntax checks and a Jellyfin 12 / .NET 10 publish. Live Jellyfin behavior still needs smoke-testing. This version is listed in the BeeFlix plugin catalog as a preview.
           EOF
           if gh release view "$TAG_NAME" >/dev/null 2>&1; then
             gh release upload "$TAG_NAME" ./BeeFlixProfiles-jellyfin12.zip --clobber
-            gh release edit "$TAG_NAME" --title "BeeFlix Profiles 0.5.1.0 Preview" --prerelease --notes-file release-notes.md
+            gh release edit "$TAG_NAME" --title "BeeFlix Profiles 0.6.0.0 Preview" --prerelease --notes-file release-notes.md
           else
             gh release create "$TAG_NAME" ./BeeFlixProfiles-jellyfin12.zip \
               --target "$GITHUB_SHA" \
@@ -88,7 +88,7 @@ jobs:
           const fs = require('fs');
           const file = 'manifest.json';
           const pluginGuid = 'db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21';
-          const version = '0.5.1.0';
+          const version = '0.6.0.0';
           const releaseUrl = 'https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.5.1.0-preview/BeeFlixProfiles-jellyfin12.zip';
           let manifest = JSON.parse(fs.readFileSync(file, 'utf8'));
           let plugin = manifest.find(p => p.guid === pluginGuid);
@@ -116,5 +116,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add manifest.json
-          git commit -m "Add BeeFlix Profiles 0.5.1.0 preview to catalog"
+          git commit -m "Add BeeFlix Profiles 0.6.0.0 preview to catalog"
           git push origin HEAD:main
