@@ -37,14 +37,21 @@
     return;
   }
 
-  // Jellyfin can inject the same plugin page script more than once while its SPA
-  // navigates. A per-root guard prevents competing instances from controlling the
-  // same feed/profile containers.
-  if (pageRoot.dataset.bfInitialized === 'true') {
-    console.info('[BeeFlix Profiles] This page root is already initialized; skipping duplicate script execution.');
+  // Jellyfin may reuse the page root while replacing its child elements. A boolean
+  // flag on the root is not sufficient: it can suppress initialization even though
+  // all the controls it was bound to have been replaced. Track the actual elements.
+  const instanceMap = window.__BeeFlixProfilesPageInstances
+    || (window.__BeeFlixProfilesPageInstances = new WeakMap());
+  const previousInstance = instanceMap.get(pageRoot);
+  if (previousInstance &&
+      previousInstance.status === status &&
+      previousInstance.profileContainer === profileContainer &&
+      previousInstance.pickerToggle === pickerToggle &&
+      previousInstance.memberList === memberList) {
+    console.info('[BeeFlix Profiles] This page instance is already initialized; skipping duplicate execution.');
     return;
   }
-  pageRoot.dataset.bfInitialized = 'true';
+  previousInstance?.cleanup?.();
   window.BeeFlixProfilesPageInitialized = true;
 
   let activeView = 'community';
@@ -1049,13 +1056,25 @@
 
   pickerToggle.addEventListener('click', () => setPickerOpen(!isMemberListOpen));
   memberSearch.addEventListener('input', () => renderMemberList(memberSearch.value));
-  document.addEventListener('click', event => {
+  const onDocumentClick = event => {
     if (isMemberListOpen && !event.target.closest('.bf-member-picker')) setPickerOpen(false);
-  });
-  document.addEventListener('keydown', event => {
+  };
+  const onDocumentKeydown = event => {
     if (event.key === 'Escape' && isMemberListOpen) {
       setPickerOpen(false);
       pickerToggle.focus();
+    }
+  };
+  document.addEventListener('click', onDocumentClick);
+  document.addEventListener('keydown', onDocumentKeydown);
+  instanceMap.set(pageRoot, {
+    status,
+    profileContainer,
+    pickerToggle,
+    memberList,
+    cleanup: () => {
+      document.removeEventListener('click', onDocumentClick);
+      document.removeEventListener('keydown', onDocumentKeydown);
     }
   });
 
