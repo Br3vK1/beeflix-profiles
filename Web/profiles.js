@@ -37,16 +37,40 @@
     return;
   }
 
+  // Jellyfin can inject the same plugin page script more than once while its SPA
+  // navigates. A per-root guard prevents competing instances from controlling the
+  // same feed/profile containers.
+  if (pageRoot.dataset.bfInitialized === 'true') {
+    console.info('[BeeFlix Profiles] This page root is already initialized; skipping duplicate script execution.');
+    return;
+  }
   pageRoot.dataset.bfInitialized = 'true';
   window.BeeFlixProfilesPageInitialized = true;
 
+  let activeView = 'community';
+  let activityRequestSequence = 0;
+
+  function setActiveView(view) {
+    activeView = view === 'profile' ? 'profile' : 'community';
+    const showProfile = activeView === 'profile';
+    profileContainer.hidden = !showProfile;
+    feedContainer.hidden = showProfile;
+    if (showProfile) {
+      profileContainer.removeAttribute('hidden');
+      profileContainer.style.setProperty('display', 'block', 'important');
+      profileContainer.style.setProperty('visibility', 'visible', 'important');
+      profileContainer.style.setProperty('opacity', '1', 'important');
+      profileContainer.style.setProperty('min-height', '1px', 'important');
+    } else {
+      profileContainer.style.removeProperty('min-height');
+      profileContainer.style.removeProperty('display');
+      profileContainer.style.removeProperty('visibility');
+      profileContainer.style.removeProperty('opacity');
+    }
+  }
+
   function revealProfileContainer() {
-    profileContainer.hidden = false;
-    profileContainer.removeAttribute('hidden');
-    profileContainer.style.setProperty('display', 'block', 'important');
-    profileContainer.style.setProperty('visibility', 'visible', 'important');
-    profileContainer.style.setProperty('opacity', '1', 'important');
-    profileContainer.style.setProperty('min-height', '1px', 'important');
+    setActiveView('profile');
   }
 
   const buildLabel = $('#bf-build-version');
@@ -240,7 +264,7 @@
     setPickerOpen(false);
     renderMemberList(memberSearch.value);
     if (options.updateUrl !== false) updateProfileUrl(member);
-    feedContainer.hidden = true;
+    activityRequestSequence += 1; // invalidate any feed request started before this navigation
     revealProfileContainer();
     loadProfile(member, false);
   }
@@ -539,10 +563,11 @@
   }
 
   async function loadCommunityFeed(append) {
-    if (activityState.loading) return;
+    // Feed refreshes must never take over the UI after a member profile is opened.
+    if (activeView !== 'community' || activityState.loading) return;
+    const requestId = ++activityRequestSequence;
     activityState.loading = true;
-    feedContainer.hidden = false;
-    profileContainer.hidden = true;
+    setActiveView('community');
     status.textContent = append ? 'Loading older community activity…' : 'Loading recent community activity…';
     status.classList.remove('bf-error');
     renderCommunityFeed();
@@ -559,6 +584,7 @@
           return { items: [] };
         })
       ]);
+      if (requestId !== activityRequestSequence || activeView !== 'community') return;
       const enhancedItems = Array.isArray(data.items) ? data.items : [];
       const achievementItems = Array.isArray(beeFlixActivity.items) ? beeFlixActivity.items : [];
       const page = enhancedItems.concat(achievementItems)
@@ -575,8 +601,10 @@
         ? `Showing ${Math.min(activityState.visibleCount, activityState.items.length)} of ${activityState.items.length} available recent events${activityState.items.length === 200 ? ' (Enhanced API limit)' : ''}.`
         : 'No community activity is available yet.';
     } catch (error) {
+      if (requestId !== activityRequestSequence || activeView !== 'community') return;
       activityState.loading = false;
       const reason = await describeApiError(error);
+      if (requestId !== activityRequestSequence || activeView !== 'community') return;
       renderCommunityFeed();
       const message = /404/.test(reason)
         ? 'Jellyfin Enhanced Activity Feed is disabled or unavailable. An administrator needs to enable Activity Feed in Jellyfin Enhanced settings.'
@@ -592,11 +620,12 @@
 
   function showCommunity() {
     selectedMember = null;
+    profileRequestSequence += 1; // ignore a profile response that finishes after leaving it
     selectedName.textContent = 'Browse members';
     selectedAvatar.hidden = true;
     updateProfileUrl(null);
-    profileContainer.hidden = true;
-    feedContainer.hidden = false;
+    activityState.loading = false;
+    setActiveView('community');
     loadCommunityFeed(false);
   }
 
@@ -880,8 +909,7 @@
       status.textContent = `Loaded ${members.length} members. Browse the community activity or choose a profile.`;
       selectedName.textContent = 'Browse members';
       selectedAvatar.hidden = true;
-      profileContainer.hidden = true;
-      profileContainer.style.removeProperty('display');
+      setActiveView('community');
       loadCommunityFeed(false);
     } catch (error) {
       console.error('[BeeFlix Profiles] Failed to load member directory:', error);
