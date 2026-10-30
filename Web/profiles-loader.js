@@ -51,3 +51,5 @@
   observer.observe(document.documentElement, { childList: true, subtree: true });
   scanForPage();
 })();
+
+// Release gate: 0.7.0 preview candidate.
