@@ -329,6 +329,85 @@
                       #BeeFlixProfilesPage .bf-profile-release { padding: .35rem .5rem; font-size: .66rem; }
                       #BeeFlixProfilesPage .bf-profile-hero-content { padding: 1rem; }
                     }
+
+                    /* 0.7.2: one full-bleed cinematic profile shell */
+                    #BeeFlixProfilesPage.bf-view-profile .bf-wrap {
+                        width: 100%; max-width: none; padding: 0 0 3rem; margin: 0;
+                    }
+                    #BeeFlixProfilesPage.bf-view-profile #bf-profile-result { width: 100%; }
+                    #BeeFlixProfilesPage.bf-view-profile .bf-profile-card { margin: 0; }
+                    #BeeFlixProfilesPage .bf-profile-hero {
+                        width: 100%; min-height: clamp(620px, 76vh, 820px);
+                        border-radius: 0; border-left: 0; border-right: 0;
+                        justify-content: stretch;
+                    }
+                    #BeeFlixProfilesPage .bf-profile-hero-topbar {
+                        display: grid; grid-template-columns: minmax(230px, 1fr) minmax(260px, 520px) auto;
+                        gap: clamp(.8rem, 2vw, 2rem); min-height: 88px;
+                        padding: .9rem clamp(1.1rem, 4vw, 4.5rem);
+                        background: rgba(7, 12, 21, .38);
+                        backdrop-filter: blur(26px) saturate(155%);
+                        -webkit-backdrop-filter: blur(26px) saturate(155%);
+                    }
+                    #BeeFlixProfilesPage .bf-profile-searchbar {
+                        position: relative; z-index: 10; width: 100%; max-width: none;
+                        min-width: 0; margin: 0; padding: .3rem .55rem .3rem .9rem;
+                        background: rgba(225, 233, 247, .12);
+                        border-color: rgba(255,255,255,.24);
+                        box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 8px 28px rgba(0,0,0,.16);
+                        backdrop-filter: blur(30px) saturate(165%);
+                        -webkit-backdrop-filter: blur(30px) saturate(165%);
+                    }
+                    #BeeFlixProfilesPage .bf-profile-searchbar .bf-picker-menu {
+                        z-index: 1000; top: calc(100% + .65rem);
+                        background: rgba(19, 26, 39, .94);
+                        backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
+                    }
+                    #BeeFlixProfilesPage .bf-profile-hero-content {
+                        display: flex; flex: 1; flex-direction: column; justify-content: center;
+                        max-width: none; padding: clamp(2rem, 6vw, 6rem);
+                    }
+                    #BeeFlixProfilesPage .bf-profile-head { gap: 1.5rem; }
+                    #BeeFlixProfilesPage .bf-avatar { width: 120px; height: 120px; flex-basis: 120px; }
+                    #BeeFlixProfilesPage .bf-profile-name { font-size: clamp(2.2rem, 5vw, 4.2rem); line-height: 1.05; }
+                    #BeeFlixProfilesPage .bf-profile-identity p { font-size: 1.05rem; }
+                    #BeeFlixProfilesPage .bf-stat-grid {
+                        position: relative; z-index: 2; width: 100%; box-sizing: border-box;
+                        grid-template-columns: repeat(4, minmax(0, 1fr));
+                        gap: 1px; margin: 0; padding: 1px clamp(1rem, 4vw, 4.5rem) 0;
+                        background: rgba(255,255,255,.17);
+                        border-top: 1px solid rgba(255,255,255,.18);
+                    }
+                    #BeeFlixProfilesPage .bf-stat {
+                        min-height: 112px; border: 0; border-radius: 0; margin: 0;
+                        background: rgba(8, 14, 24, .48);
+                        box-shadow: none; backdrop-filter: blur(24px);
+                        -webkit-backdrop-filter: blur(24px);
+                    }
+                    #BeeFlixProfilesPage .bf-profile-overview {
+                        padding: 0 clamp(1rem, 3vw, 3rem); margin-top: 1.25rem;
+                    }
+                    @media (max-width: 900px) {
+                        #BeeFlixProfilesPage .bf-profile-hero { min-height: 640px; }
+                        #BeeFlixProfilesPage .bf-profile-hero-topbar {
+                            grid-template-columns: minmax(0,1fr) minmax(220px, 1.1fr);
+                        }
+                        #BeeFlixProfilesPage .bf-profile-release { display: none; }
+                        #BeeFlixProfilesPage .bf-stat-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+                    }
+                    @media (max-width: 600px) {
+                        #BeeFlixProfilesPage .bf-profile-hero { min-height: 680px; }
+                        #BeeFlixProfilesPage .bf-profile-hero-topbar {
+                            grid-template-columns: minmax(0,1fr); gap: .75rem;
+                            padding: .8rem;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-searchbar { width: 100%; }
+                        #BeeFlixProfilesPage .bf-profile-hero-content { padding: 2rem 1rem; }
+                        #BeeFlixProfilesPage .bf-avatar { width: 76px; height: 76px; flex-basis: 76px; }
+                        #BeeFlixProfilesPage .bf-profile-name { font-size: 2rem; }
+                        #BeeFlixProfilesPage .bf-stat { min-height: 84px; padding: .75rem; }
+                        #BeeFlixProfilesPage .bf-profile-overview { padding: 0 .65rem; }
+                    }
 </style>
 
                 <main class="bf-wrap">
