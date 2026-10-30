@@ -14,22 +14,24 @@
     if (!root || root.dataset.bfScriptState === 'loading' || root.dataset.bfScriptState === 'loaded') return;
     root.dataset.bfScriptState = 'loading';
 
+    window.BeeFlixProfilesPageInitialized = false;
+
     const script = document.createElement('script');
     script.async = true;
-    script.dataset.beeflixVersion = '0.6.0.4';
+    script.dataset.beeflixVersion = '0.7.0';
     script.src = window.ApiClient && typeof window.ApiClient.getUrl === 'function'
-      ? window.ApiClient.getUrl('/BeeFlixProfiles/profiles.js?v=0.6.0.4')
-      : '/BeeFlixProfiles/profiles.js?v=0.6.0.4';
+      ? window.ApiClient.getUrl('/BeeFlixProfiles/profiles.js?v=0.7.0')
+      : '/BeeFlixProfiles/profiles.js?v=0.7.0';
 
     script.onload = () => {
       root.dataset.bfScriptState = window.BeeFlixProfilesPageInitialized ? 'loaded' : 'error';
       if (!window.BeeFlixProfilesPageInitialized) {
-        setStatus(root, 'BeeFlix Community script loaded but did not initialize. Build 0.6.0.4; check the browser console for the exact cause.', true);
+        setStatus(root, 'BeeFlix Community script loaded but did not initialize. Build 0.7.0; check the browser console for the exact cause.', true);
       }
     };
     script.onerror = () => {
       root.dataset.bfScriptState = 'error';
-      setStatus(root, 'Could not load BeeFlix Community JavaScript (build 0.6.0.4). Check the Jellyfin server logs.', true);
+      setStatus(root, 'Could not load BeeFlix Community JavaScript (build 0.7.0). Check the Jellyfin server logs.', true);
     };
     document.head.appendChild(script);
   }
