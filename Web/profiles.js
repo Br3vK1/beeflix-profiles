@@ -269,15 +269,19 @@
     loadProfile(member, false);
   }
 
-  function addStat(container, label, value) {
+  function addStat(container, label, value, iconName) {
     const card = document.createElement('div');
     card.className = 'bf-stat';
+    const icon = document.createElement('span');
+    icon.className = 'material-icons bf-stat-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = iconName;
     const valueNode = document.createElement('strong');
     valueNode.textContent = String(value);
     const labelNode = document.createElement('span');
     labelNode.className = 'bf-muted';
     labelNode.textContent = label;
-    card.append(valueNode, labelNode);
+    card.append(icon, valueNode, labelNode);
     container.appendChild(card);
   }
 
@@ -653,7 +657,7 @@
     }
   }
 
-  function renderProfile(member, stats, reviews, total, isLoadingMore, achievementData) {
+  function renderProfile(member, stats, reviews, total, isLoadingMore, achievementData, profileActivity = []) {
     const section = document.createElement('section');
     section.className = 'bf-card bf-profile-card';
 
@@ -695,12 +699,14 @@
     const statGrid = document.createElement('div');
     statGrid.className = 'bf-stat-grid';
     const reviewCount = stats?.reviewCount ?? total;
-    addStat(statGrid, 'Reviews', reviewCount);
-    addStat(statGrid, 'Rated reviews', stats?.ratedReviewCount ?? '—');
+    addStat(statGrid, 'Movies watched', achievementData?.movieCount ?? '—', 'movie');
+    addStat(statGrid, 'Series watched', achievementData?.watchedSeriesCount ?? '—', 'live_tv');
+    addStat(statGrid, 'Reviews', reviewCount, 'rate_review');
     const avg = stats?.averageRating == null ? '—' : Number(stats.averageRating).toFixed(1) + ' / 5';
-    addStat(statGrid, 'Average rating', avg);
+    addStat(statGrid, 'Average rating', avg, 'star');
     section.appendChild(statGrid);
 
+    const achievements = Array.isArray(achievementData?.achievements) ? achievementData.achievements : [];
     const achievementSection = document.createElement('section');
     achievementSection.className = 'bf-card bf-achievements-card';
     achievementSection.id = 'bf-achievements';
@@ -711,54 +717,93 @@
     const achievementCounts = document.createElement('span');
     achievementCounts.className = 'bf-muted';
     achievementCounts.textContent = achievementData
-      ? `${achievementData.movieCount || 0} movies · ${achievementData.completedSeriesCount || 0} completed series`
+      ? `${achievements.filter(item => item.unlocked).length} / ${achievements.length} unlocked`
       : 'Viewing milestones';
     achievementHeading.append(achievementTitle, achievementCounts);
+    const achievementOpen = document.createElement('button');
+    achievementOpen.type = 'button';
+    achievementOpen.className = 'bf-inline-link';
+    achievementOpen.textContent = 'View all achievements →';
+    achievementOpen.addEventListener('click', () => renderAchievementsPage(member, achievementData));
+    achievementHeading.appendChild(achievementOpen);
     achievementSection.appendChild(achievementHeading);
 
-    const achievementGrid = document.createElement('div');
-    achievementGrid.className = 'bf-achievement-grid';
-    const achievements = Array.isArray(achievementData?.achievements) ? achievementData.achievements : [];
-    if (achievements.length) {
-      achievements.forEach(item => {
-        const card = document.createElement('article');
-        card.className = 'bf-achievement' + (item.unlocked ? ' is-unlocked' : ' is-locked');
-        const icon = document.createElement('span');
-        icon.className = 'bf-achievement-icon';
-        icon.textContent = item.unlocked ? '🏅' : '🔒';
-        icon.setAttribute('aria-hidden', 'true');
-        const copy = document.createElement('div');
-        copy.className = 'bf-achievement-copy';
-        const name = document.createElement('h3');
-        name.textContent = item.name || 'Achievement';
-        const description = document.createElement('p');
-        description.textContent = item.description || '';
-        const progress = document.createElement('div');
-        progress.className = 'bf-achievement-progress';
-        const track = document.createElement('div');
-        track.className = 'bf-achievement-track';
-        const fill = document.createElement('span');
-        fill.style.width = `${Math.round(Math.max(0, Math.min(1, Number(item.progress) || 0)) * 100)}%`;
-        track.appendChild(fill);
-        const progressLabel = document.createElement('small');
-        progressLabel.className = 'bf-muted';
-        progressLabel.textContent = item.unlocked
-          ? (item.retroactive ? 'Earned from existing library history' : 'Unlocked')
-          : `${Number(item.currentCount) || 0} / ${Number(item.threshold) || 0}`;
-        progress.append(track, progressLabel);
-        copy.append(name, description, progress);
-        card.append(icon, copy);
-        achievementGrid.appendChild(card);
-      });
-    } else {
+    const achievementPreview = document.createElement('div');
+    achievementPreview.className = 'bf-achievement-preview';
+    const recentUnlocks = achievements.filter(item => item.unlocked)
+      .sort((a, b) => String(b.unlockedAt || '').localeCompare(String(a.unlockedAt || '')))
+      .slice(0, 3);
+    const almostThere = achievements.filter(item => !item.unlocked && Number(item.progress) > 0)
+      .sort((a, b) => Number(b.progress || 0) - Number(a.progress || 0))
+      .slice(0, 2);
+    const addAchievementPreview = (item, locked) => {
+      const row = document.createElement('div');
+      row.className = 'bf-achievement-preview-row' + (locked ? ' is-locked' : ' is-unlocked');
+      const icon = document.createElement('span');
+      icon.className = 'bf-achievement-icon';
+      icon.textContent = locked ? '🔒' : '🏅';
+      const copy = document.createElement('div');
+      copy.className = 'bf-achievement-copy';
+      const name = document.createElement('strong');
+      name.textContent = item.name || 'Achievement';
+      const detail = document.createElement('small');
+      detail.className = 'bf-muted';
+      detail.textContent = locked
+        ? `${Number(item.currentCount) || 0} / ${Number(item.threshold) || 0} · ${Math.round((Number(item.progress) || 0) * 100)}%`
+        : (item.retroactive ? 'Earned from existing library history' : 'Recently unlocked');
+      copy.append(name, detail);
+      row.append(icon, copy);
+      achievementPreview.appendChild(row);
+    };
+    recentUnlocks.forEach(item => addAchievementPreview(item, false));
+    almostThere.forEach(item => addAchievementPreview(item, true));
+    if (!recentUnlocks.length && !almostThere.length) {
       const emptyAchievements = document.createElement('p');
       emptyAchievements.className = 'bf-muted';
       emptyAchievements.textContent = achievementData
-        ? 'No milestones unlocked yet. Keep watching!'
-        : 'Achievement data is unavailable. Update BeeFlix Profiles to a version with achievements.';
-      achievementGrid.appendChild(emptyAchievements);
+        ? 'No recent unlocks yet. Your next milestone is waiting.'
+        : 'Achievement data is unavailable.';
+      achievementPreview.appendChild(emptyAchievements);
     }
-    achievementSection.appendChild(achievementGrid);
+    achievementSection.appendChild(achievementPreview);
+
+    const activitySection = document.createElement('section');
+    activitySection.className = 'bf-card bf-profile-activity';
+    const activityHeading = document.createElement('div');
+    activityHeading.className = 'bf-section-heading';
+    const activityTitle = document.createElement('h2');
+    activityTitle.textContent = 'Recent activity';
+    const activityCount = document.createElement('span');
+    activityCount.className = 'bf-muted';
+    activityCount.textContent = profileActivity.length ? `${profileActivity.length} events` : '';
+    activityHeading.append(activityTitle, activityCount);
+    const activityList = document.createElement('div');
+    activityList.className = 'bf-activity-list';
+    const activityVisibleCount = 2;
+    if (profileActivity.length) {
+      profileActivity.slice(0, activityVisibleCount).forEach(entry => activityList.appendChild(buildActivityCard(entry)));
+    } else {
+      const emptyActivity = document.createElement('p');
+      emptyActivity.className = 'bf-muted';
+      emptyActivity.textContent = 'No recent activity recorded for this member.';
+      activityList.appendChild(emptyActivity);
+    }
+    activitySection.append(activityHeading, activityList);
+    if (profileActivity.length > activityVisibleCount) {
+      const showMore = document.createElement('button');
+      showMore.type = 'button';
+      showMore.className = 'bf-inline-link bf-activity-show-more';
+      showMore.textContent = `Show more (${profileActivity.length - activityVisibleCount})`;
+      showMore.addEventListener('click', () => {
+        const expanded = activityList.dataset.expanded === 'true';
+        activityList.dataset.expanded = String(!expanded);
+        activityList.replaceChildren();
+        profileActivity.slice(0, expanded ? activityVisibleCount : profileActivity.length)
+          .forEach(entry => activityList.appendChild(buildActivityCard(entry)));
+        showMore.textContent = expanded ? `Show more (${profileActivity.length - activityVisibleCount})` : 'Show less ↑';
+      });
+      activitySection.appendChild(showMore);
+    }
 
     const history = document.createElement('section');
     history.className = 'bf-card bf-history-card';
@@ -792,12 +837,18 @@
       more.addEventListener('click', () => loadProfile(member, true));
       history.appendChild(more);
     }
-    profileContainer.replaceChildren(section, achievementSection, history);
+    const overview = document.createElement('div');
+    overview.className = 'bf-profile-overview';
+    const mainColumn = document.createElement('div');
+    mainColumn.className = 'bf-profile-main';
+    const sideColumn = document.createElement('aside');
+    sideColumn.className = 'bf-profile-sidebar';
+    mainColumn.append(activitySection, history);
+    sideColumn.appendChild(achievementSection);
+    overview.append(mainColumn, sideColumn);
+    profileContainer.replaceChildren(section, overview);
     revealProfileContainer();
-    const diagnostic = document.createElement('p');
-    diagnostic.className = 'bf-status bf-muted';
-    diagnostic.textContent = `Profile layout check: ${profileContainer.children.length} sections rendered in active page; display=${getComputedStyle(profileContainer).display}; height=${Math.round(profileContainer.getBoundingClientRect().height)}px.`;
-    profileContainer.appendChild(diagnostic);
+remove diagnostic
   }
 
   async function loadProfile(member, append) {
@@ -822,12 +873,12 @@
       loading.textContent = `Loading ${member.userName}’s BeeFlix profile…`;
       profileContainer.appendChild(loading);
     } else if (isSameProfile) {
-      renderProfile(member, cachedStats, existingReviews, cachedTotal, true, cachedAchievements);
+      renderProfile(member, cachedStats, existingReviews, cachedTotal, true, cachedAchievements, profileState.activity || []);
     }
 
     try {
       const endpoint = ApiClient.getUrl(`/BeeFlixProfiles/users/${encodeURIComponent(id)}/reviews?limit=50&offset=${offset}`);
-      const [data, achievementData] = await Promise.all([
+      const [data, achievementData, activityData, achievementActivityData] = await Promise.all([
         ApiClient.ajax({ type: 'GET', url: endpoint, dataType: 'json' }),
         append && cachedAchievements
           ? Promise.resolve(cachedAchievements)
@@ -838,7 +889,13 @@
             }).catch(error => {
               console.warn('[BeeFlix Profiles] Achievement data unavailable:', error);
               return null;
-            })
+            }),
+        append ? Promise.resolve({ items: profileState.activity || [] }) :
+          ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('/JellyfinEnhanced/activity?limit=200'), dataType: 'json' })
+            .catch(error => { console.warn('[BeeFlix Profiles] Profile activity unavailable:', error); return { items: [] }; }),
+        append ? Promise.resolve({ items: [] }) :
+          ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('/BeeFlixProfiles/activity/achievements?limit=200'), dataType: 'json' })
+            .catch(error => { console.warn('[BeeFlix Profiles] Profile achievement activity unavailable:', error); return { items: [] }; })
       ]);
       if (requestId !== profileRequestSequence) return;
 
@@ -846,9 +903,16 @@
       const stats = data.stats || cachedStats;
       const total = Number.isFinite(Number(data.total)) ? Number(data.total) : cachedTotal;
       const combinedReviews = append ? existingReviews.concat(page) : page;
-      profileState = { userId: id, total, reviews: combinedReviews, stats, achievements: achievementData };
+      const profileActivity = append
+        ? (profileState.activity || [])
+        : [...(Array.isArray(activityData.items) ? activityData.items : []),
+           ...(Array.isArray(achievementActivityData.items) ? achievementActivityData.items : [])]
+          .filter(entry => normalizeId(entry.UserId || entry.userId) === normalizeId(id))
+          .sort((a, b) => Number(b.Timestamp || b.timestamp || 0) - Number(a.Timestamp || a.timestamp || 0))
+          .slice(0, 50);
+      profileState = { userId: id, total, reviews: combinedReviews, stats, achievements: achievementData, activity: profileActivity };
 
-      renderProfile(member, stats, combinedReviews, total, false, achievementData);
+      renderProfile(member, stats, combinedReviews, total, false, achievementData, profileActivity);
       status.textContent = `Showing ${combinedReviews.length} of ${total} visible reviews for ${member.userName}.`;
     } catch (error) {
       if (requestId !== profileRequestSequence) return;
@@ -858,7 +922,7 @@
       status.textContent = message;
       status.classList.add('bf-error');
       if (append && isSameProfile) {
-        renderProfile(member, cachedStats, existingReviews, cachedTotal, false, cachedAchievements);
+        renderProfile(member, cachedStats, existingReviews, cachedTotal, false, cachedAchievements, profileState.activity || []);
       } else {
         const errorCard = document.createElement('section');
         errorCard.className = 'bf-card bf-profile-error bf-error';
