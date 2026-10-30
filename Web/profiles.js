@@ -30,7 +30,7 @@
   let selectedMember = null;
   let isMemberListOpen = false;
   let profileRequestSequence = 0;
-  let profileState = { userId: null, total: 0, reviews: [], stats: null };
+  let profileState = { userId: null, total: 0, reviews: [], stats: null, achievements: null };
   let activityState = { items: [], visibleCount: 50, total: 0, loading: false };
 
   function normalizeId(value) {
@@ -532,7 +532,7 @@
     }
   }
 
-  function renderProfile(member, stats, reviews, total, isLoadingMore) {
+  function renderProfile(member, stats, reviews, total, isLoadingMore, achievementData) {
     const section = document.createElement('section');
     section.className = 'bf-card bf-profile-card';
 
@@ -580,6 +580,65 @@
     addStat(statGrid, 'Average rating', avg);
     section.appendChild(statGrid);
 
+    const achievementSection = document.createElement('section');
+    achievementSection.className = 'bf-card bf-achievements-card';
+    achievementSection.id = 'bf-achievements';
+    const achievementHeading = document.createElement('div');
+    achievementHeading.className = 'bf-section-heading';
+    const achievementTitle = document.createElement('h2');
+    achievementTitle.textContent = 'Achievements';
+    const achievementCounts = document.createElement('span');
+    achievementCounts.className = 'bf-muted';
+    achievementCounts.textContent = achievementData
+      ? `${achievementData.movieCount || 0} movies · ${achievementData.completedSeriesCount || 0} completed series`
+      : 'Viewing milestones';
+    achievementHeading.append(achievementTitle, achievementCounts);
+    achievementSection.appendChild(achievementHeading);
+
+    const achievementGrid = document.createElement('div');
+    achievementGrid.className = 'bf-achievement-grid';
+    const achievements = Array.isArray(achievementData?.achievements) ? achievementData.achievements : [];
+    if (achievements.length) {
+      achievements.forEach(item => {
+        const card = document.createElement('article');
+        card.className = 'bf-achievement' + (item.unlocked ? ' is-unlocked' : ' is-locked');
+        const icon = document.createElement('span');
+        icon.className = 'bf-achievement-icon';
+        icon.textContent = item.unlocked ? '🏅' : '🔒';
+        icon.setAttribute('aria-hidden', 'true');
+        const copy = document.createElement('div');
+        copy.className = 'bf-achievement-copy';
+        const name = document.createElement('h3');
+        name.textContent = item.name || 'Achievement';
+        const description = document.createElement('p');
+        description.textContent = item.description || '';
+        const progress = document.createElement('div');
+        progress.className = 'bf-achievement-progress';
+        const track = document.createElement('div');
+        track.className = 'bf-achievement-track';
+        const fill = document.createElement('span');
+        fill.style.width = `${Math.round(Math.max(0, Math.min(1, Number(item.progress) || 0)) * 100)}%`;
+        track.appendChild(fill);
+        const progressLabel = document.createElement('small');
+        progressLabel.className = 'bf-muted';
+        progressLabel.textContent = item.unlocked
+          ? (item.retroactive ? 'Earned from existing library history' : 'Unlocked')
+          : `${Number(item.currentCount) || 0} / ${Number(item.threshold) || 0}`;
+        progress.append(track, progressLabel);
+        copy.append(name, description, progress);
+        card.append(icon, copy);
+        achievementGrid.appendChild(card);
+      });
+    } else {
+      const emptyAchievements = document.createElement('p');
+      emptyAchievements.className = 'bf-muted';
+      emptyAchievements.textContent = achievementData
+        ? 'No milestones unlocked yet. Keep watching!'
+        : 'Achievement data is unavailable. Update BeeFlix Profiles to a version with achievements.';
+      achievementGrid.appendChild(emptyAchievements);
+    }
+    achievementSection.appendChild(achievementGrid);
+
     const history = document.createElement('section');
     history.className = 'bf-card bf-history-card';
     const historyHeader = document.createElement('div');
@@ -612,7 +671,7 @@
       more.addEventListener('click', () => loadProfile(member, true));
       history.appendChild(more);
     }
-    profileContainer.replaceChildren(section, history);
+    profileContainer.replaceChildren(section, achievementSection, history);
   }
 
   async function loadProfile(member, append) {
@@ -623,26 +682,39 @@
     const offset = existingReviews.length;
     const cachedStats = append && isSameProfile ? profileState.stats : null;
     const cachedTotal = append && isSameProfile ? profileState.total : 0;
+    const cachedAchievements = append && isSameProfile ? profileState.achievements : null;
 
     status.textContent = append
       ? `Loading more of ${member.userName}’s reviews…`
       : `Loading ${member.userName}’s profile…`;
     status.classList.remove('bf-error');
     if (!append) profileContainer.replaceChildren();
-    else if (isSameProfile) renderProfile(member, cachedStats, existingReviews, cachedTotal, true);
+    else if (isSameProfile) renderProfile(member, cachedStats, existingReviews, cachedTotal, true, cachedAchievements);
 
     try {
       const endpoint = ApiClient.getUrl(`/BeeFlixProfiles/users/${encodeURIComponent(id)}/reviews?limit=50&offset=${offset}`);
-      const data = await ApiClient.ajax({ type: 'GET', url: endpoint, dataType: 'json' });
+      const [data, achievementData] = await Promise.all([
+        ApiClient.ajax({ type: 'GET', url: endpoint, dataType: 'json' }),
+        append && cachedAchievements
+          ? Promise.resolve(cachedAchievements)
+          : ApiClient.ajax({
+              type: 'GET',
+              url: ApiClient.getUrl(`/BeeFlixProfiles/users/${encodeURIComponent(id)}/achievements`),
+              dataType: 'json'
+            }).catch(error => {
+              console.warn('[BeeFlix Profiles] Achievement data unavailable:', error);
+              return null;
+            })
+      ]);
       if (requestId !== profileRequestSequence) return;
 
       const page = Array.isArray(data.reviews) ? data.reviews : [];
       const stats = data.stats || cachedStats;
       const total = Number.isFinite(Number(data.total)) ? Number(data.total) : cachedTotal;
       const combinedReviews = append ? existingReviews.concat(page) : page;
-      profileState = { userId: id, total, reviews: combinedReviews, stats };
+      profileState = { userId: id, total, reviews: combinedReviews, stats, achievements: achievementData };
 
-      renderProfile(member, stats, combinedReviews, total, false);
+      renderProfile(member, stats, combinedReviews, total, false, achievementData);
       status.textContent = `Showing ${combinedReviews.length} of ${total} visible reviews for ${member.userName}.`;
     } catch (error) {
       if (requestId !== profileRequestSequence) return;
@@ -651,7 +723,7 @@
       status.textContent = `Could not load ${member.userName}’s profile: ${reason}. Check the plugin version and server logs.`;
       status.classList.add('bf-error');
       if (append && isSameProfile) {
-        renderProfile(member, cachedStats, existingReviews, cachedTotal, false);
+        renderProfile(member, cachedStats, existingReviews, cachedTotal, false, cachedAchievements);
       }
     }
   }
