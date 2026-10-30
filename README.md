@@ -21,6 +21,7 @@ Development version: `0.6.0.0` (not yet released)
 - Unified historical community activity from Jellyfin Enhanced, with member and media links.
 - Movie and completed-series milestones calculated from Jellyfin per-user playstate.
 - Permanent BeeFlix achievement unlocks stored in BeeFlix plugin configuration; no duplicate playback-history database.
+- New milestone unlocks appear in the Community activity feed after the member's achievement data is recalculated. Existing history is backfilled without flooding the feed; background unlock detection is a future improvement.
 - Local Jellyfin library lookup for review TMDB IDs, so cards can show a real title, year, poster, and a link to the title in Jellyfin.
 - A TMDB lookup link and clear fallback when the media item cannot be matched in the local Jellyfin library.
 - Searchable member picker and Jellyfin avatars retained from the earlier preview.
