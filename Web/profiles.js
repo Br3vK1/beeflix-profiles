@@ -907,7 +907,6 @@
     overview.append(mainColumn, sideColumn);
     profileContainer.replaceChildren(section, overview);
     revealProfileContainer();
-remove diagnostic
   }
 
   async function loadProfile(member, append) {
