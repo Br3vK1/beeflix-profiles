@@ -492,6 +492,133 @@
                         #BeeFlixProfilesPage .bf-stat { min-height: 84px; padding: .75rem; }
                         #BeeFlixProfilesPage .bf-profile-overview { padding: 0 .65rem; }
                     }
+
+
+                    /* 0.7.2 mobile composition pass: compact masthead, tighter identity, unified actions. */
+                    @media (max-width: 600px) {
+                        #BeeFlixProfilesPage.bf-view-profile .bf-profile-hero {
+                            min-height: 0;
+                            height: auto;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-hero-topbar {
+                            display: grid;
+                            grid-template-columns: minmax(0, 1fr);
+                            align-items: center;
+                            gap: .55rem;
+                            min-height: 0;
+                            padding: .65rem .8rem .75rem;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-brand-lockup {
+                            gap: .65rem;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-brand-icon {
+                            flex-basis: 34px;
+                            width: 34px;
+                            height: 34px;
+                            border-radius: 10px;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-brand-icon .material-icons {
+                            font-size: 20px;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-brand-eyebrow {
+                            margin-bottom: .08rem;
+                            font-size: .58rem;
+                            letter-spacing: .14em;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-brand-title {
+                            font-size: .84rem;
+                            line-height: 1.15;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-searchbar {
+                            min-height: 46px;
+                            margin: 0;
+                            padding: .15rem .55rem .15rem .8rem;
+                            border-radius: 13px;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-searchbar .bf-picker-toggle {
+                            min-height: 42px;
+                            padding: .15rem .25rem;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-hero-content {
+                            display: flex;
+                            flex: 0 0 auto;
+                            justify-content: center;
+                            min-height: 0;
+                            padding: 1.35rem 1rem 1.1rem;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-head {
+                            gap: .85rem;
+                        }
+                        #BeeFlixProfilesPage .bf-avatar {
+                            flex-basis: 72px;
+                            width: 72px;
+                            height: 72px;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-name {
+                            margin-bottom: .2rem;
+                            font-size: 1.75rem;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-identity p {
+                            font-size: .88rem;
+                            line-height: 1.25;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-actions {
+                            display: grid;
+                            grid-template-columns: repeat(2, minmax(0, 1fr));
+                            gap: .6rem;
+                            width: 100%;
+                            margin: 1rem 0 0;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-actions button {
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            min-width: 0;
+                            min-height: 44px;
+                            margin: 0;
+                            padding: .55rem .45rem;
+                            border-radius: 999px;
+                            font-size: .82rem;
+                            line-height: 1.15;
+                            text-align: center;
+                            white-space: normal;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-hero .bf-share-button {
+                            margin-left: 0;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-hero > .bf-stat-grid {
+                            grid-template-columns: repeat(2, minmax(0, 1fr));
+                            gap: 1px;
+                            width: 100%;
+                            margin: 0;
+                            padding: 1px 0 0;
+                            border-radius: 0;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-hero > .bf-stat-grid > .bf-stat {
+                            min-height: 108px;
+                            padding: .95rem .85rem;
+                            column-gap: .45rem;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-hero > .bf-stat-grid > .bf-stat strong {
+                            font-size: clamp(1.85rem, 8vw, 2.3rem);
+                        }
+                        #BeeFlixProfilesPage .bf-profile-hero > .bf-stat-grid > .bf-stat .bf-stat-icon {
+                            font-size: 1.9rem;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-hero > .bf-stat-grid > .bf-stat > span:not(.bf-stat-icon) {
+                            font-size: .8rem;
+                        }
+                        #BeeFlixProfilesPage .bf-profile-overview {
+                            padding: 0 .8rem;
+                            margin-top: .85rem;
+                        }
+                    }
+                    @media (max-width: 380px) {
+                        #BeeFlixProfilesPage .bf-profile-actions {
+                            grid-template-columns: minmax(0, 1fr);
+                        }
+                    }
+
 </style>
 
                 <main class="bf-wrap">
