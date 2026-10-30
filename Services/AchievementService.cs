@@ -119,6 +119,7 @@ public sealed class AchievementService
 
             var completedSeriesBefore = configuration.CompletedSeries.Count;
             var movieCount = CountWatchedMovies(user);
+            var watchedSeriesCount = CountWatchedSeries(user);
             var completedSeriesCount = CountCompletedSeries(user);
             var changed = configuration.CompletedSeries.Count != completedSeriesBefore;
             var now = DateTimeOffset.UtcNow;
@@ -163,7 +164,7 @@ public sealed class AchievementService
 
             if (changed) plugin.UpdateConfiguration(configuration);
 
-            return new { userId, movieCount, completedSeriesCount, achievements = achievementRows };
+            return new { userId, movieCount, watchedSeriesCount, completedSeriesCount, achievements = achievementRows };
         }
     }
 
@@ -192,6 +193,64 @@ public sealed class AchievementService
 
         var data = _userData.GetUserDataBatch(movies, user);
         return movies.Count(movie => data.TryGetValue(movie.Id, out var state) && state.Played);
+    }
+
+    private int CountWatchedSeries(User user)
+    {
+        var seriesQuery = new InternalItemsQuery(user)
+        {
+            IncludeItemTypes = [BaseItemKind.Series],
+            Recursive = true,
+            IsVirtualItem = false,
+            EnableTotalRecordCount = false
+        };
+
+        var seriesItems = _library.GetItemsResult(seriesQuery).Items
+            .OfType<Series>()
+            .Where(series => series.IsVisible(user) && !series.IsVirtualItem)
+            .ToArray();
+
+        var episodeQuery = new InternalItemsQuery(user)
+        {
+            IncludeItemTypes = [BaseItemKind.Episode],
+            Recursive = true,
+            IsVirtualItem = false,
+            EnableTotalRecordCount = false
+        };
+
+        var watchedSeriesKeys = _library.GetItemsResult(episodeQuery).Items
+            .OfType<Episode>()
+            .Where(episode => !episode.IsMissingEpisode
+                && !episode.IsVirtualItem
+                && episode.IsVisible(user)
+                && episode.ParentIndexNumber is > 0
+                && (episode.PremiereDate is null || episode.PremiereDate <= DateTime.UtcNow)
+                && !string.IsNullOrWhiteSpace(episode.SeriesPresentationUniqueKey))
+            .DistinctBy(episode => episode.Id)
+            .ToArray();
+
+        var states = watchedSeriesKeys.Length > 0
+            ? _userData.GetUserDataBatch(watchedSeriesKeys, user)
+            : new Dictionary<Guid, UserItemData>();
+
+        var watchedKeys = watchedSeriesKeys
+            .Where(episode => states.TryGetValue(episode.Id, out var state) && state.Played)
+            .Select(episode => episode.SeriesPresentationUniqueKey)
+            .ToHashSet(StringComparer.Ordinal);
+
+        return seriesItems.Count(series =>
+        {
+            try
+            {
+                var key = series.GetPresentationUniqueKey();
+                return !string.IsNullOrWhiteSpace(key) && watchedKeys.Contains(key);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Could not read presentation key for series {SeriesId}", series.Id);
+                return false;
+            }
+        });
     }
 
     private int CountCompletedSeries(User user)
