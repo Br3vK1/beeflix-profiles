@@ -727,6 +727,31 @@
     const section = document.createElement('section');
     section.className = 'bf-card bf-profile-card';
 
+    const hero = document.createElement('div');
+    hero.className = 'bf-profile-hero';
+    const backdropLayer = document.createElement('div');
+    backdropLayer.className = 'bf-hero-backdrops';
+    const heroItemIds = [...profileActivity.map(entry => String(entry.Item?.Id || '')),
+      ...reviews.map(review => String(review.jellyfinItemId || ''))]
+      .filter((id, index, all) => /^[0-9a-f]{32}$/i.test(id) && all.indexOf(id) === index)
+      .slice(0, 3);
+    heroItemIds.forEach(id => {
+      const image = document.createElement('img');
+      image.className = 'bf-hero-backdrop';
+      image.alt = '';
+      image.loading = 'lazy';
+      image.src = ApiClient.getUrl(`/Items/${encodeURIComponent(id)}/Images/Backdrop?maxWidth=1800&quality=85`);
+      image.onerror = () => {
+        image.onerror = null;
+        image.src = ApiClient.getUrl(`/Items/${encodeURIComponent(id)}/Images/Primary?maxWidth=1800&quality=85`);
+      };
+      backdropLayer.appendChild(image);
+    });
+    hero.appendChild(backdropLayer);
+
+    const heroContent = document.createElement('div');
+    heroContent.className = 'bf-profile-hero-content';
+
     const header = document.createElement('div');
     header.className = 'bf-profile-head';
     const avatar = document.createElement('img');
@@ -760,7 +785,9 @@
     share.textContent = 'Share profile link';
     share.addEventListener('click', () => copyText(profileUrl(member)));
     actions.appendChild(share);
-    section.append(header, actions);
+    heroContent.append(header, actions);
+    hero.appendChild(heroContent);
+    section.appendChild(hero);
 
     const statGrid = document.createElement('div');
     statGrid.className = 'bf-stat-grid';
@@ -786,12 +813,6 @@
       ? `${achievements.filter(item => item.unlocked).length} / ${achievements.length} unlocked`
       : 'Viewing milestones';
     achievementHeading.append(achievementTitle, achievementCounts);
-    const achievementOpen = document.createElement('button');
-    achievementOpen.type = 'button';
-    achievementOpen.className = 'bf-inline-link';
-    achievementOpen.textContent = 'View all achievements →';
-    achievementOpen.addEventListener('click', () => renderAchievementsPage(member, achievementData));
-    achievementHeading.appendChild(achievementOpen);
     achievementSection.appendChild(achievementHeading);
 
     const achievementPreview = document.createElement('div');
@@ -814,10 +835,20 @@
       name.textContent = item.name || 'Achievement';
       const detail = document.createElement('small');
       detail.className = 'bf-muted';
+      const progressValue = Math.max(0, Math.min(100, Math.round((Number(item.progress) || (item.unlocked ? 1 : 0)) * 100)));
       detail.textContent = locked
-        ? `${Number(item.currentCount) || 0} / ${Number(item.threshold) || 0} · ${Math.round((Number(item.progress) || 0) * 100)}%`
+        ? `${Number(item.currentCount) || 0} / ${Number(item.threshold) || 0} · ${progressValue}%`
         : (item.retroactive ? 'Earned from existing library history' : 'Recently unlocked');
-      copy.append(name, detail);
+      const track = document.createElement('div');
+      track.className = 'bf-achievement-mini-track';
+      track.setAttribute('role', 'progressbar');
+      track.setAttribute('aria-valuemin', '0');
+      track.setAttribute('aria-valuemax', '100');
+      track.setAttribute('aria-valuenow', String(progressValue));
+      const fill = document.createElement('span');
+      fill.style.width = progressValue + '%';
+      track.appendChild(fill);
+      copy.append(name, detail, track);
       row.append(icon, copy);
       achievementPreview.appendChild(row);
     };
@@ -832,6 +863,12 @@
       achievementPreview.appendChild(emptyAchievements);
     }
     achievementSection.appendChild(achievementPreview);
+    const achievementOpen = document.createElement('button');
+    achievementOpen.type = 'button';
+    achievementOpen.className = 'bf-achievements-view-all';
+    achievementOpen.textContent = 'View all achievements →';
+    achievementOpen.addEventListener('click', () => renderAchievementsPage(member, achievementData));
+    achievementSection.appendChild(achievementOpen);
 
     const activitySection = document.createElement('section');
     activitySection.className = 'bf-card bf-profile-activity';
