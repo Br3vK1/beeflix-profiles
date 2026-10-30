@@ -1,14 +1,14 @@
-# BeeFlix Profiles — shareable member profiles
+# BeeFlix Profiles — BeeFlix Community
 
 BeeFlix Profiles is a Jellyfin 12 plugin for community profiles built on the reviews and ratings already stored by Jellyfin Enhanced. It does not create a duplicate ratings database or modify Enhanced's review data.
 
 **Preview release:** the build is validated by CI, but the live navigation, metadata matching, and privacy behavior still need to be smoke-tested against the target BeeFlix server.
 
-## Candidate release
+## Development build
 
-Source branch: `feature/shareable-member-profiles-v0.5.0`
+Source branch: `feature/community-hub-achievements-v0.6.0`
 
-Planned version: `0.5.1.0`
+Development version: `0.6.0.0` (not yet released)
 
 ### Included in this milestone
 
@@ -18,6 +18,9 @@ Planned version: `0.5.1.0`
 - Server-side protection so a copied or guessed profile URL does not bypass member visibility checks.
 - Profile-wide review count, rated review count, and average rating across all visible reviews.
 - Newest-first review history with a **Load more reviews** control.
+- Unified historical community activity from Jellyfin Enhanced, with member and media links.
+- Movie and completed-series milestones calculated from Jellyfin per-user playstate.
+- Permanent BeeFlix achievement unlocks stored in BeeFlix plugin configuration; no duplicate playback-history database.
 - Local Jellyfin library lookup for review TMDB IDs, so cards can show a real title, year, poster, and a link to the title in Jellyfin.
 - A TMDB lookup link and clear fallback when the media item cannot be matched in the local Jellyfin library.
 - Searchable member picker and Jellyfin avatars retained from the earlier preview.
@@ -45,17 +48,17 @@ Manifest URL:
 
 `https://raw.githubusercontent.com/Br3vK1/beeflix-profiles/main/manifest.json`
 
-## Publish after validation
+## Release policy
 
-Open [Actions → Publish BeeFlix Profiles](https://github.com/Br3vK1/beeflix-profiles/actions/workflows/release.yml), choose **Run workflow**, select branch `main`, use version `0.5.1.0`, and source branch `feature/shareable-member-profiles-v0.5.0`.
-
-Do not publish until the branch's **Build BeeFlix Profiles** workflow passes and the user menu, shared profile URL, metadata matching, and member visibility have been tested on the target Jellyfin 12.2 instance.
+Development builds are built and validated on the isolated feature branch. Do not install a package until CI succeeds and the Jellyfin 12 server compatibility has been reviewed. The existing preview branch and main remain unchanged until the user approves promotion.
 
 ## Not included yet
 
 - Click-through profile links from the existing BeeFlix review carousel.
 - Remote TMDB metadata fetch for reviewed titles that are not in the local Jellyfin library.
-- Genre/taste summaries, broader recent activity, badges, and milestones.
+- Achievement-unlock events merged into the Community activity timeline.
+- Achievement cosmetics, profile banners, review styling, and profile backgrounds.
+- Server-side activity pagination beyond the newest 200 Enhanced events.
 - Automated privacy-parity tests against every Jellyfin Enhanced version.
 
 ## Build locally
