@@ -180,6 +180,8 @@
                     #BeeFlixProfilesPage .bf-review-date { color: var(--jf-palette-text-secondary, inherit); opacity: .8; font-size: .78rem; }
                     #BeeFlixProfilesPage .bf-load-more { display: block; margin: 1rem auto .25rem; }
                     #BeeFlixProfilesPage [hidden] { display: none !important; }
+                    #BeeFlixProfilesPage #bf-profile-result:not([hidden]) { display: block !important; visibility: visible !important; opacity: 1 !important; }
+                    #BeeFlixProfilesPage #bf-profile-result > .bf-card { display: block !important; visibility: visible !important; opacity: 1 !important; }
 
                     @media (max-width: 720px) {
                         #BeeFlixProfilesPage .bf-wrap { padding: .75rem .5rem 2rem; }
@@ -220,7 +222,7 @@
                             <h1>Movies are better shared.</h1>
                             <p class="bf-muted">See what your people have watched, reviewed, and achieved.</p>
                         </div>
-                        <div class="bf-brand-tag"><span class="material-icons">auto_awesome</span> Your crew, your taste <span id="bf-build-version" class="bf-build-version">Build 0.6.0.2</span></div>
+                        <div class="bf-brand-tag"><span class="material-icons">auto_awesome</span> Your crew, your taste <span id="bf-build-version" class="bf-build-version">Build 0.6.0.3</span></div>
                     </header>
 
                     <section class="bf-card bf-directory-card" aria-labelledby="bf-profile-lookup-title">
