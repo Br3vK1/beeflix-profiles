@@ -26,6 +26,15 @@
 
   window.BeeFlixProfilesPageInitialized = true;
 
+  function revealProfileContainer() {
+    profileContainer.hidden = false;
+    profileContainer.removeAttribute('hidden');
+    profileContainer.style.setProperty('display', 'block', 'important');
+    profileContainer.style.setProperty('visibility', 'visible', 'important');
+    profileContainer.style.setProperty('opacity', '1', 'important');
+    profileContainer.style.setProperty('min-height', '1px', 'important');
+  }
+
   const buildLabel = $('#bf-build-version');
   if (buildLabel) {
     ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('/BeeFlixProfiles/health'), dataType: 'json' })
@@ -218,7 +227,7 @@
     renderMemberList(memberSearch.value);
     if (options.updateUrl !== false) updateProfileUrl(member);
     feedContainer.hidden = true;
-    profileContainer.hidden = false;
+    revealProfileContainer();
     loadProfile(member, false);
   }
 
@@ -741,6 +750,11 @@
       history.appendChild(more);
     }
     profileContainer.replaceChildren(section, achievementSection, history);
+    revealProfileContainer();
+    const diagnostic = document.createElement('p');
+    diagnostic.className = 'bf-status bf-muted';
+    diagnostic.textContent = `Profile layout check: ${profileContainer.children.length} sections rendered; container display=${getComputedStyle(profileContainer).display}; height=${Math.round(profileContainer.getBoundingClientRect().height)}px.`;
+    profileContainer.appendChild(diagnostic);
   }
 
   async function loadProfile(member, append) {
@@ -853,6 +867,7 @@
       selectedName.textContent = 'Browse members';
       selectedAvatar.hidden = true;
       profileContainer.hidden = true;
+      profileContainer.style.removeProperty('display');
       loadCommunityFeed(false);
     } catch (error) {
       console.error('[BeeFlix Profiles] Failed to load member directory:', error);
