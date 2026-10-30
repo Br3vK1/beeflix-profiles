@@ -62,6 +62,7 @@
     activeView = view === 'profile' ? 'profile' : 'community';
     const showProfile = activeView === 'profile';
     pageRoot.classList.toggle('bf-view-profile', showProfile);
+    document.body.classList.toggle('bf-beeflix-profile-active', showProfile);
     const profileSearchbar = profileContainer.querySelector('.bf-profile-searchbar');
     const pickerHost = showProfile ? profileSearchbar : pageRoot.querySelector('.bf-directory-card');
     if (pickerHost && memberPicker && memberPicker.parentElement !== pickerHost) pickerHost.appendChild(memberPicker);
