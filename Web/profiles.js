@@ -91,10 +91,12 @@
       .then(info => {
         buildLabel.textContent = 'Build ' + String(info.version || 'unknown');
         buildLabel.title = 'BeeFlix Profiles server build ' + String(info.version || 'unknown');
+        pageRoot.querySelectorAll('.bf-profile-release-text').forEach(node => { node.textContent = buildLabel.textContent; });
       })
       .catch(error => {
         buildLabel.textContent = 'Build unavailable · health check failed';
         buildLabel.title = 'The page script is running, but the health endpoint could not be reached: ' + String(error);
+        pageRoot.querySelectorAll('.bf-profile-release-text').forEach(node => { node.textContent = buildLabel.textContent; });
       });
   }
 
@@ -757,6 +759,41 @@
     });
     hero.appendChild(backdropLayer);
 
+    const heroTopbar = document.createElement('div');
+    heroTopbar.className = 'bf-profile-hero-topbar';
+    const brandLockup = document.createElement('div');
+    brandLockup.className = 'bf-profile-brand-lockup';
+    const brandIcon = document.createElement('span');
+    brandIcon.className = 'bf-profile-brand-icon';
+    const brandGlyph = document.createElement('span');
+    brandGlyph.className = 'material-icons';
+    brandGlyph.textContent = 'groups';
+    brandIcon.appendChild(brandGlyph);
+    const brandCopy = document.createElement('div');
+    brandCopy.className = 'bf-profile-brand-copy';
+    const brandEyebrow = document.createElement('p');
+    brandEyebrow.className = 'bf-profile-brand-eyebrow';
+    brandEyebrow.textContent = 'BEEFLIX · COMMUNITY';
+    const brandTitle = document.createElement('p');
+    brandTitle.className = 'bf-profile-brand-title';
+    brandTitle.textContent = 'Movies are better shared.';
+    const brandTagline = document.createElement('p');
+    brandTagline.className = 'bf-profile-brand-tagline';
+    brandTagline.textContent = 'See what your people have watched, reviewed, and achieved.';
+    brandCopy.append(brandEyebrow, brandTitle, brandTagline);
+    brandLockup.append(brandIcon, brandCopy);
+    const release = document.createElement('span');
+    release.className = 'bf-profile-release';
+    const releaseIcon = document.createElement('span');
+    releaseIcon.className = 'material-icons';
+    releaseIcon.textContent = 'auto_awesome';
+    const releaseText = document.createElement('span');
+    releaseText.className = 'bf-profile-release-text';
+    releaseText.textContent = buildLabel?.textContent || 'Build 0.7.0';
+    release.append(releaseIcon, releaseText);
+    heroTopbar.append(brandLockup, release);
+    hero.appendChild(heroTopbar);
+
     const heroContent = document.createElement('div');
     heroContent.className = 'bf-profile-hero-content';
 
@@ -793,13 +830,7 @@
     share.textContent = 'Share profile link';
     share.addEventListener('click', () => copyText(profileUrl(member)));
     actions.appendChild(share);
-    const heroBrand = document.createElement('p');
-    heroBrand.className = 'bf-profile-hero-brand';
-    const heroBrandIcon = document.createElement('span');
-    heroBrandIcon.className = 'material-icons';
-    heroBrandIcon.textContent = 'groups';
-    heroBrand.append(heroBrandIcon, document.createTextNode('BEEFLIX · COMMUNITY'));
-    heroContent.append(heroBrand, header, actions);
+    heroContent.append(header, actions);
     hero.appendChild(heroContent);
     section.appendChild(hero);
 
