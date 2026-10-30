@@ -1,7 +1,20 @@
 (() => {
   'use strict';
 
-  const $ = (selector) => document.querySelector(selector);
+  // Jellyfin's SPA can retain previous plugin-page DOM nodes during navigation.
+  // Always bind this script instance to the newest visible BeeFlix page root.
+  const pageRoots = Array.from(document.querySelectorAll('#BeeFlixProfilesPage'));
+  const pageRoot = pageRoots.filter(root =>
+    root.isConnected &&
+    root.getClientRects().length > 0 &&
+    getComputedStyle(root).visibility !== 'hidden' &&
+    !root.closest('[hidden]')
+  ).at(-1) || pageRoots.at(-1);
+  if (!pageRoot) {
+    console.error('[BeeFlix Profiles] No active Community page root was found.');
+    return;
+  }
+  const $ = (selector) => pageRoot.querySelector(selector);
   const status = $('#bf-status');
   const profileContainer = $('#bf-profile-result');
   const feedContainer = $('#bf-community-feed');
@@ -24,6 +37,7 @@
     return;
   }
 
+  pageRoot.dataset.bfInitialized = 'true';
   window.BeeFlixProfilesPageInitialized = true;
 
   function revealProfileContainer() {
@@ -753,7 +767,7 @@
     revealProfileContainer();
     const diagnostic = document.createElement('p');
     diagnostic.className = 'bf-status bf-muted';
-    diagnostic.textContent = `Profile layout check: ${profileContainer.children.length} sections rendered; container display=${getComputedStyle(profileContainer).display}; height=${Math.round(profileContainer.getBoundingClientRect().height)}px.`;
+    diagnostic.textContent = `Profile layout check: ${profileContainer.children.length} sections rendered in active page; display=${getComputedStyle(profileContainer).display}; height=${Math.round(profileContainer.getBoundingClientRect().height)}px.`;
     profileContainer.appendChild(diagnostic);
   }
 
