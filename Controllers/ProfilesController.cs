@@ -93,7 +93,7 @@ public sealed class ProfilesController : ControllerBase
     public IActionResult Health() => Ok(new
     {
         plugin = "BeeFlix Profiles",
-        version = "0.6.0.2",
+        version = "0.6.0.3",
         enhancedIntegration = FindReviewStore() != null,
         userFacingNavigation = PluginPagesRegistrationService.IsRegistered
     });
