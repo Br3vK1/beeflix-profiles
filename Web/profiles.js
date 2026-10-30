@@ -63,7 +63,7 @@
     const showProfile = activeView === 'profile';
     pageRoot.classList.toggle('bf-view-profile', showProfile);
     const profileSearchbar = profileContainer.querySelector('.bf-profile-searchbar');
-    const pickerHost = showProfile ? profileSearchbar : pageRoot.querySelector('.bf-directory-card .bf-member-picker');
+    const pickerHost = showProfile ? profileSearchbar : pageRoot.querySelector('.bf-directory-card');
     if (pickerHost && memberPicker && memberPicker.parentElement !== pickerHost) pickerHost.appendChild(memberPicker);
     profileContainer.hidden = !showProfile;
     feedContainer.hidden = showProfile;
@@ -730,7 +730,36 @@
     revealProfileContainer();
   }
 
-  function renderProfile(member, stats, reviews, total, isLoadingMore, achievementData, profileActivity = []) {
+  async function resolveHeroBackdropIds(profileActivity, reviews) {
+    const candidates = [
+      ...profileActivity.map(entry => entry.Item?.Id || ''),
+      ...reviews.map(review => review.jellyfinItemId || '')
+    ].filter((id, index, all) => /^[0-9a-f]{32}$/i.test(String(id)) && all.indexOf(id) === index)
+      .slice(0, 12);
+    const resolved = [];
+    for (const id of candidates) {
+      try {
+        const item = await ApiClient.ajax({
+          type: 'GET',
+          url: ApiClient.getUrl('/Items/' + encodeURIComponent(id) + '?Fields=SeriesId,ParentId,Type'),
+          dataType: 'json'
+        });
+        const type = String(item.Type || '').toLowerCase();
+        const backdropId = type === 'episode'
+          ? (item.SeriesId || '')
+          : (type === 'movie' || type === 'series' ? item.Id : (item.SeriesId || item.Id));
+        if (/^[0-9a-f]{32}$/i.test(String(backdropId)) && !resolved.includes(backdropId)) {
+          resolved.push(backdropId);
+          if (resolved.length === 3) break;
+        }
+      } catch (error) {
+        console.debug('[BeeFlix Profiles] Could not resolve a watched title for hero artwork:', id, error);
+      }
+    }
+    return resolved;
+  }
+
+  function renderProfile(member, stats, reviews, total, isLoadingMore, achievementData, profileActivity = [], heroBackdropIds = []) {
     const section = document.createElement('section');
     section.className = 'bf-card bf-profile-card';
 
@@ -741,11 +770,7 @@
     hero.className = 'bf-profile-hero';
     const backdropLayer = document.createElement('div');
     backdropLayer.className = 'bf-hero-backdrops';
-    const heroItemIds = [...profileActivity.map(entry => String(entry.Item?.Id || '')),
-      ...reviews.map(review => String(review.jellyfinItemId || ''))]
-      .filter((id, index, all) => /^[0-9a-f]{32}$/i.test(id) && all.indexOf(id) === index)
-      .slice(0, 3);
-    heroItemIds.forEach(id => {
+    heroBackdropIds.forEach(id => {
       const image = document.createElement('img');
       image.className = 'bf-hero-backdrop';
       image.alt = '';
@@ -789,9 +814,9 @@
     releaseIcon.textContent = 'auto_awesome';
     const releaseText = document.createElement('span');
     releaseText.className = 'bf-profile-release-text';
-    releaseText.textContent = buildLabel?.textContent || 'Build 0.7.0';
+    releaseText.textContent = buildLabel?.textContent || 'Build 0.7.2';
     release.append(releaseIcon, releaseText);
-    heroTopbar.append(brandLockup, release);
+    heroTopbar.append(brandLockup, profileSearchbar, release);
     hero.appendChild(heroTopbar);
 
     const heroContent = document.createElement('div');
@@ -842,7 +867,7 @@
     addStat(statGrid, 'Reviews', reviewCount, 'rate_review');
     const avg = stats?.averageRating == null ? '—' : Number(stats.averageRating).toFixed(1) + ' / 5';
     addStat(statGrid, 'Average rating', avg, 'star');
-    section.appendChild(statGrid);
+    hero.appendChild(statGrid);
 
     const achievements = Array.isArray(achievementData?.achievements) ? achievementData.achievements : [];
     const achievementSection = document.createElement('section');
@@ -994,8 +1019,8 @@
     mainColumn.append(activitySection, history);
     sideColumn.appendChild(achievementSection);
     overview.append(mainColumn, sideColumn);
-    profileContainer.replaceChildren(profileSearchbar, section, overview);
-    if (memberPicker) profileSearchbar.appendChild(memberPicker);
+    profileContainer.replaceChildren(section, overview);
+    if (memberPicker && memberPicker.parentElement !== profileSearchbar) profileSearchbar.appendChild(memberPicker);
     revealProfileContainer();
   }
 
@@ -1060,7 +1085,9 @@
           .slice(0, 50);
       profileState = { userId: id, total, reviews: combinedReviews, stats, achievements: achievementData, activity: profileActivity };
 
-      renderProfile(member, stats, combinedReviews, total, false, achievementData, profileActivity);
+      const heroBackdropIds = await resolveHeroBackdropIds(profileActivity, combinedReviews);
+      if (requestId !== profileRequestSequence) return;
+      renderProfile(member, stats, combinedReviews, total, false, achievementData, profileActivity, heroBackdropIds);
       status.textContent = `Showing ${combinedReviews.length} of ${total} visible reviews for ${member.userName}.`;
     } catch (error) {
       if (requestId !== profileRequestSequence) return;
