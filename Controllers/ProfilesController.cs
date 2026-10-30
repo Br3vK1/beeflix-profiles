@@ -39,6 +39,7 @@ public sealed class ProfilesController : ControllerBase
     [HttpGet("page")]
     public IActionResult GetProfilePage()
     {
+        SetNoCacheHeaders();
         var stream = typeof(Plugin).Assembly.GetManifestResourceStream("BeeFlix.Profiles.Web.profiles.html");
         if (stream is null)
         {
@@ -55,6 +56,7 @@ public sealed class ProfilesController : ControllerBase
     [AllowAnonymous]
     public IActionResult GetProfileScript()
     {
+        SetNoCacheHeaders();
         var stream = typeof(Plugin).Assembly.GetManifestResourceStream("BeeFlix.Profiles.Web.profiles.js");
         if (stream is null)
         {
@@ -69,6 +71,7 @@ public sealed class ProfilesController : ControllerBase
     [AllowAnonymous]
     public IActionResult GetProfileLoaderScript()
     {
+        SetNoCacheHeaders();
         var stream = typeof(Plugin).Assembly.GetManifestResourceStream("BeeFlix.Profiles.Web.profiles-loader.js");
         if (stream is null)
         {
@@ -79,11 +82,18 @@ public sealed class ProfilesController : ControllerBase
         return File(stream, "application/javascript; charset=utf-8");
     }
 
+    private void SetNoCacheHeaders()
+    {
+        Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, max-age=0";
+        Response.Headers.Pragma = "no-cache";
+        Response.Headers.Expires = "0";
+    }
+
     [HttpGet("health")]
     public IActionResult Health() => Ok(new
     {
         plugin = "BeeFlix Profiles",
-        version = "0.6.0.1",
+        version = "0.6.0.2",
         enhancedIntegration = FindReviewStore() != null,
         userFacingNavigation = PluginPagesRegistrationService.IsRegistered
     });
