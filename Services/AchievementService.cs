@@ -168,7 +168,7 @@ public sealed class AchievementService
             .Where(episode => !episode.IsMissingEpisode
                 && !episode.IsVirtualItem
                 && episode.IsVisible(user)
-                && episode.AiredSeasonNumber is > 0
+                && episode.ParentIndexNumber is > 0
                 && (episode.PremiereDate is null || episode.PremiereDate <= DateTime.UtcNow)
                 && !string.IsNullOrWhiteSpace(episode.SeriesPresentationUniqueKey))
             .DistinctBy(episode => episode.Id)
