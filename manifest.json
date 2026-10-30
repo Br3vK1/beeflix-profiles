@@ -12,8 +12,8 @@
         "changelog": "PREVIEW: Adds a full-bleed cinematic profile header, integrated frosted-glass member search and stats, safer directory navigation for empty profiles, and movie/series-level rotating backdrop artwork. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
         "targetAbi": "12.0.0.0",
         "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.7.2-preview/BeeFlixProfiles-jellyfin12.zip",
-        "checksum": "a2dedbf1fc0cb06a7cf2f1465ea07945",
-        "timestamp": "2026-10-30T19:43:56.304Z"
+        "checksum": "56d1281caa643de3dcfba4336697ef09",
+        "timestamp": "2026-10-30T19:49:26.973Z"
       },
       {
         "version": "0.7.1",
