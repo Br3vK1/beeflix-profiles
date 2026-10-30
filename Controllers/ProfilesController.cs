@@ -121,6 +121,61 @@ public sealed class ProfilesController : ControllerBase
         }
     }
 
+    [HttpGet("activity/achievements")]
+    public IActionResult GetAchievementActivity([FromQuery] int limit = 100)
+    {
+        if (Plugin.Instance is null || !Plugin.Instance.Configuration.Enabled) return NotFound();
+        limit = Math.Clamp(limit, 1, 200);
+
+        var viewerId = GetViewerId();
+        if (viewerId == Guid.Empty) return Unauthorized();
+        var viewer = _users.GetUserById(viewerId);
+        if (viewer is null) return Unauthorized();
+        var isAdmin = SafelyHasPermission(viewer, "IsAdministrator");
+
+        try
+        {
+            var visibleUsers = _users.GetUsers()
+                .Where(user => user is not null)
+                .Where(user => isAdmin || user.Id == viewerId || !IsHiddenOrDisabled(user))
+                .ToDictionary(user => user.Id.ToString("N"), StringComparer.OrdinalIgnoreCase);
+
+            var events = Plugin.Instance.Configuration.AchievementUnlocks
+                .Where(entry => !entry.Retroactive && visibleUsers.ContainsKey(entry.UserId))
+                .Select(entry =>
+                {
+                    if (!DateTimeOffset.TryParse(entry.UnlockedAt, System.Globalization.CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.AssumeUniversal, out var unlockedAt))
+                        return null;
+
+                    var author = visibleUsers[entry.UserId];
+                    var achievementName = AchievementService.GetAchievementName(entry.AchievementId);
+                    if (achievementName is null) return null;
+
+                    return new
+                    {
+                        ActivityType = "AchievementUnlocked",
+                        UserId = author.Id.ToString("N"),
+                        UserName = author.Username,
+                        Timestamp = unlockedAt.ToUnixTimeMilliseconds(),
+                        AchievementId = entry.AchievementId,
+                        AchievementName = achievementName
+                    };
+                })
+                .Where(entry => entry is not null)
+                .OrderByDescending(entry => entry!.Timestamp)
+                .Take(limit)
+                .ToArray();
+
+            return Ok(new { items = events });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load BeeFlix achievement activity");
+            return StatusCode(503, new { message = "Could not load BeeFlix achievement activity." });
+        }
+    }
+
     [HttpGet("users/{userId}/achievements")]
     public IActionResult GetUserAchievements(string userId)
     {
