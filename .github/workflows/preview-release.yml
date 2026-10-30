@@ -11,7 +11,7 @@ jobs:
   publish-preview:
     # Build, package, and catalog publication happen only after this exact gated commit.
     # This gate prevents normal feature pushes from publishing a release.
-    if: ${{ github.event.head_commit.message == 'Publish 0.6.0.3 preview from CI' }}
+    if: ${{ github.event.head_commit.message == 'Publish 0.6.0.4 preview from CI' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out tested source
@@ -32,7 +32,7 @@ jobs:
         run: dotnet restore BeeFlix.Profiles.csproj
 
       - name: Build and publish
-        run: dotnet publish BeeFlix.Profiles.csproj --configuration Release --output ./publish -p:Version="0.6.0.3" -p:AssemblyVersion="0.6.0.3" -p:FileVersion="0.6.0.3"
+        run: dotnet publish BeeFlix.Profiles.csproj --configuration Release --output ./publish -p:Version="0.6.0.4" -p:AssemblyVersion="0.6.0.4" -p:FileVersion="0.6.0.4"
 
       - name: Package plugin and calculate catalog checksum
         shell: bash
@@ -44,7 +44,7 @@ jobs:
           {
             "guid": "db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21",
             "name": "BeeFlix Profiles",
-            "version": "0.6.0.3",
+            "version": "0.6.0.4",
             "targetAbi": "12.0.0.0"
           }
           EOF
@@ -54,7 +54,7 @@ jobs:
       - name: Publish or update GitHub preview release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG_NAME: v0.6.0.3-preview
+          TAG_NAME: v0.6.0.4-preview
         shell: bash
         run: |
           set -euo pipefail
@@ -65,11 +65,11 @@ jobs:
           EOF
           if gh release view "$TAG_NAME" >/dev/null 2>&1; then
             gh release upload "$TAG_NAME" ./BeeFlixProfiles-jellyfin12.zip --clobber
-            gh release edit "$TAG_NAME" --title "BeeFlix Profiles 0.6.0.3 Preview" --prerelease --notes-file release-notes.md
+            gh release edit "$TAG_NAME" --title "BeeFlix Profiles 0.6.0.4 Preview" --prerelease --notes-file release-notes.md
           else
             gh release create "$TAG_NAME" ./BeeFlixProfiles-jellyfin12.zip \
               --target "$GITHUB_SHA" \
-              --title "BeeFlix Profiles 0.6.0.3 Preview" \
+              --title "BeeFlix Profiles 0.6.0.4 Preview" \
               --prerelease \
               --notes-file release-notes.md
           fi
@@ -89,8 +89,8 @@ jobs:
           const fs = require('fs');
           const file = 'manifest.json';
           const pluginGuid = 'db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21';
-          const version = '0.6.0.3';
-          const releaseUrl = 'https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.6.0.3-preview/BeeFlixProfiles-jellyfin12.zip';
+          const version = '0.6.0.4';
+          const releaseUrl = 'https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.6.0.4-preview/BeeFlixProfiles-jellyfin12.zip';
           let manifest = JSON.parse(fs.readFileSync(file, 'utf8'));
           let plugin = manifest.find(p => p.guid === pluginGuid);
           if (!plugin) throw new Error('BeeFlix Profiles entry was not found in the plugin catalog.');
@@ -111,11 +111,11 @@ jobs:
         working-directory: catalog-repo
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG_NAME: v0.6.0.3-preview
+          TAG_NAME: v0.6.0.4-preview
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add manifest.json
-          git commit -m "Add BeeFlix Profiles 0.6.0.3 preview to catalog"
+          git commit -m "Add BeeFlix Profiles 0.6.0.4 preview to catalog"
           git push origin HEAD:main
