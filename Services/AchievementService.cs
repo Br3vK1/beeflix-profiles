@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
@@ -14,6 +15,7 @@ namespace BeeFlix.Profiles.Services;
 public sealed class AchievementService
 {
     private static readonly object ConfigurationLock = new();
+    private readonly ConcurrentDictionary<Guid, DateTimeOffset> _lastEventEvaluation = new();
 
     private static readonly AchievementDefinition[] MovieMilestones =
     [
@@ -40,13 +42,62 @@ public sealed class AchievementService
 
     private readonly ILibraryManager _library;
     private readonly IUserDataManager _userData;
+    private readonly IUserManager _users;
     private readonly ILogger<AchievementService> _logger;
 
-    public AchievementService(ILibraryManager library, IUserDataManager userData, ILogger<AchievementService> logger)
+    public AchievementService(ILibraryManager library, IUserDataManager userData, IUserManager users, ILogger<AchievementService> logger)
     {
         _library = library;
         _userData = userData;
+        _users = users;
         _logger = logger;
+        _userData.UserDataSaved += OnUserDataSaved;
+    }
+
+    private void OnUserDataSaved(object? sender, UserDataSaveEventArgs args)
+    {
+        // PlaybackProgress fires repeatedly while someone watches. Only recalculate
+        // after a completed playback or an explicit watched/unwatched change.
+        if (args.SaveReason is not (MediaBrowser.Model.Entities.UserDataSaveReason.PlaybackFinished
+            or MediaBrowser.Model.Entities.UserDataSaveReason.TogglePlayed))
+        {
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var shouldEvaluate = false;
+        _lastEventEvaluation.AddOrUpdate(
+            args.UserId,
+            _ =>
+            {
+                shouldEvaluate = true;
+                return now;
+            },
+            (_, previous) =>
+            {
+                if (now - previous >= TimeSpan.FromSeconds(60))
+                {
+                    shouldEvaluate = true;
+                    return now;
+                }
+
+                return previous;
+            });
+
+        if (!shouldEvaluate) return;
+
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                var user = _users.GetUserById(args.UserId);
+                if (user is not null) GetAchievements(user);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Background achievement refresh failed for user {UserId}", args.UserId);
+            }
+        });
     }
 
     public object GetAchievements(User user)
