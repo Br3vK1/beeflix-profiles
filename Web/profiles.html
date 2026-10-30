@@ -96,6 +96,30 @@
                     #BeeFlixProfilesPage .bf-share-button:hover, #BeeFlixProfilesPage .bf-load-more:hover { background: var(--bf-accent-strong) !important; transform: translateY(-1px); }
                     #BeeFlixProfilesPage .bf-share-button:focus-visible, #BeeFlixProfilesPage .bf-load-more:focus-visible { outline: 2px solid var(--jf-palette-text-primary, white); outline-offset: 3px; }
                     #BeeFlixProfilesPage .bf-load-more:disabled { opacity: .6; cursor: wait; transform: none; }
+                    #BeeFlixProfilesPage .bf-community-back, #BeeFlixProfilesPage .bf-feed-refresh {
+                        border: 1px solid var(--jf-palette-divider, rgba(128,128,128,.3)); border-radius: 999px;
+                        padding: .6rem .9rem; background: transparent; color: inherit; cursor: pointer; font-weight: 700;
+                    }
+                    #BeeFlixProfilesPage .bf-community-back:hover, #BeeFlixProfilesPage .bf-feed-refresh:hover { border-color: rgba(242,201,76,.65); }
+                    #BeeFlixProfilesPage .bf-profile-actions { justify-content: space-between; gap: .6rem; flex-wrap: wrap; }
+                    #BeeFlixProfilesPage .bf-activity-list { display: flex; flex-direction: column; gap: .25rem; }
+                    #BeeFlixProfilesPage .bf-activity-card {
+                        display: flex; align-items: center; gap: .9rem; padding: .85rem .25rem;
+                        border-bottom: 1px solid var(--jf-palette-divider, rgba(128,128,128,.18)); min-width: 0;
+                    }
+                    #BeeFlixProfilesPage .bf-activity-avatar-link { flex: 0 0 44px; width: 44px; height: 44px; }
+                    #BeeFlixProfilesPage .bf-activity-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: rgba(128,128,128,.2); }
+                    #BeeFlixProfilesPage .bf-activity-body { flex: 1; min-width: 0; }
+                    #BeeFlixProfilesPage .bf-activity-headline { margin: 0; line-height: 1.45; overflow-wrap: anywhere; }
+                    #BeeFlixProfilesPage .bf-activity-author, #BeeFlixProfilesPage .bf-activity-title { color: inherit; font-weight: 800; text-decoration: none; }
+                    #BeeFlixProfilesPage .bf-activity-author:hover, #BeeFlixProfilesPage .bf-activity-title[href]:hover { color: var(--bf-accent-strong); text-decoration: underline; }
+                    #BeeFlixProfilesPage .bf-activity-rating { color: var(--bf-accent-strong); font-weight: 800; margin-top: .25rem; }
+                    #BeeFlixProfilesPage .bf-activity-excerpt { margin: .3rem 0 0; color: var(--jf-palette-text-secondary, inherit); white-space: pre-wrap; overflow-wrap: anywhere; }
+                    #BeeFlixProfilesPage .bf-activity-progress-label { display: inline-block; margin-top: .3rem; color: var(--jf-palette-text-secondary, inherit); font-size: .78rem; }
+                    #BeeFlixProfilesPage .bf-activity-time { display: block; margin-top: .3rem; color: var(--jf-palette-text-secondary, inherit); font-size: .76rem; }
+                    #BeeFlixProfilesPage .bf-activity-visual { flex: 0 0 54px; width: 54px; height: 78px; display: grid; place-items: center; overflow: hidden; border-radius: 8px; background: rgba(242,201,76,.1); color: var(--bf-accent-strong); text-decoration: none; font-size: 1.5rem; }
+                    #BeeFlixProfilesPage .bf-activity-visual img { width: 100%; height: 100%; object-fit: cover; }
+                    #BeeFlixProfilesPage .bf-feed-hint { padding: .7rem; border-radius: 10px; background: rgba(242,201,76,.07); }
                     #BeeFlixProfilesPage .bf-stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; margin-top: 1.35rem; }
                     #BeeFlixProfilesPage .bf-stat {
                         display: flex; flex-direction: column; gap: .3rem; min-width: 0; padding: 1rem;
@@ -175,7 +199,7 @@
                         <div class="bf-brand-copy">
                             <p class="bf-eyebrow">BEEFLIX · COMMUNITY</p>
                             <h1>Movies are better shared.</h1>
-                            <p class="bf-muted">Discover what your people love, explore their reviews, and find your next favorite.</p>
+                            <p class="bf-muted">See what your people have watched, reviewed, and achieved.</p>
                         </div>
                         <div class="bf-brand-tag"><span class="material-icons">auto_awesome</span> Your crew, your taste</div>
                     </header>
@@ -184,7 +208,7 @@
                         <div class="bf-directory-heading">
                             <h2 id="bf-profile-lookup-title">Find a member</h2>
                         </div>
-                        <p class="bf-muted">Open a profile to explore their ratings and written reviews.</p>
+                        <p class="bf-muted">Search for a member to open their profile, or explore the community activity below.</p>
                         <div class="bf-member-picker">
                             <button id="bf-member-picker-toggle" type="button" is="emby-button" class="bf-picker-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="bf-member-list">
                                 <img id="bf-selected-avatar" class="bf-member-avatar" alt="" hidden>
@@ -203,7 +227,8 @@
                         </div>
                         <p id="bf-status" class="bf-status" role="status" aria-live="polite">Loading the member directory…</p>
                     </section>
-                    <section id="bf-profile-result" aria-live="polite"></section>
+                    <section id="bf-community-feed" aria-live="polite"></section>
+                    <section id="bf-profile-result" aria-live="polite" hidden></section>
                 </main>
 
                 <!-- JavaScript is loaded by the File Transformation bootstrap after this fragment is inserted. -->
