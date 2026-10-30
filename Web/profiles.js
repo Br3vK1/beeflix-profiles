@@ -744,8 +744,16 @@
       ? `Loading more of ${member.userName}’s reviews…`
       : `Loading ${member.userName}’s profile…`;
     status.classList.remove('bf-error');
-    if (!append) profileContainer.replaceChildren();
-    else if (isSameProfile) renderProfile(member, cachedStats, existingReviews, cachedTotal, true, cachedAchievements);
+    if (!append) {
+      profileContainer.replaceChildren();
+      const loading = document.createElement('section');
+      loading.className = 'bf-card bf-profile-loading';
+      loading.setAttribute('role', 'status');
+      loading.textContent = `Loading ${member.userName}’s BeeFlix profile…`;
+      profileContainer.appendChild(loading);
+    } else if (isSameProfile) {
+      renderProfile(member, cachedStats, existingReviews, cachedTotal, true, cachedAchievements);
+    }
 
     try {
       const endpoint = ApiClient.getUrl(`/BeeFlixProfiles/users/${encodeURIComponent(id)}/reviews?limit=50&offset=${offset}`);
@@ -776,10 +784,17 @@
       if (requestId !== profileRequestSequence) return;
       console.error('[BeeFlix Profiles] Failed to load profile:', error);
       const reason = await describeApiError(error);
-      status.textContent = `Could not load ${member.userName}’s profile: ${reason}. Check the plugin version and server logs.`;
+      const message = `Could not load ${member.userName}’s profile: ${reason}. Check the plugin version and server logs.`;
+      status.textContent = message;
       status.classList.add('bf-error');
       if (append && isSameProfile) {
         renderProfile(member, cachedStats, existingReviews, cachedTotal, false, cachedAchievements);
+      } else {
+        const errorCard = document.createElement('section');
+        errorCard.className = 'bf-card bf-profile-error bf-error';
+        errorCard.setAttribute('role', 'alert');
+        errorCard.textContent = message;
+        profileContainer.replaceChildren(errorCard);
       }
     }
   }
