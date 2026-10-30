@@ -17,8 +17,8 @@
     const script = document.createElement('script');
     script.async = true;
     script.src = window.ApiClient && typeof window.ApiClient.getUrl === 'function'
-      ? window.ApiClient.getUrl('/BeeFlixProfiles/profiles.js')
-      : '/BeeFlixProfiles/profiles.js';
+      ? window.ApiClient.getUrl('/BeeFlixProfiles/profiles.js?v=0.6.0.1')
+      : '/BeeFlixProfiles/profiles.js?v=0.6.0.1';
 
     script.onload = () => {
       root.dataset.bfScriptState = 'loaded';
