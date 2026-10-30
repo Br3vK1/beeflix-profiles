@@ -22,4 +22,7 @@ public sealed class PluginConfiguration : BasePluginConfiguration
 {
     public bool Enabled { get; set; } = true;
     public int MaximumReviewsPerPage { get; set; } = 50;
+    public List<CompletedSeriesRecord> CompletedSeries { get; set; } = [];
+    public List<AchievementUnlockRecord> AchievementUnlocks { get; set; } = [];
+    public List<string> AchievementInitializedUsers { get; set; } = [];
 }
