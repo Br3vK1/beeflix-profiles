@@ -111,6 +111,13 @@ public sealed class AchievementService
         }
     }
 
+    public static string? GetAchievementName(string achievementId)
+    {
+        return MovieMilestones.Concat(SeriesMilestones)
+            .FirstOrDefault(definition => string.Equals(definition.Id, achievementId, StringComparison.OrdinalIgnoreCase))
+            ?.Name;
+    }
+
     private int CountWatchedMovies(User user)
     {
         var query = new InternalItemsQuery(user)
