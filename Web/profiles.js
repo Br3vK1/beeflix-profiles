@@ -4,6 +4,7 @@
   const $ = (selector) => document.querySelector(selector);
   const status = $('#bf-status');
   const profileContainer = $('#bf-profile-result');
+  const feedContainer = $('#bf-community-feed');
   const pickerToggle = $('#bf-member-picker-toggle');
   const pickerMenu = $('#bf-member-picker-menu');
   const selectedName = $('#bf-selected-name');
@@ -11,7 +12,7 @@
   const memberSearch = $('#bf-member-search');
   const memberList = $('#bf-member-list');
 
-  if (!status || !profileContainer || !pickerToggle || !pickerMenu ||
+  if (!status || !profileContainer || !feedContainer || !pickerToggle || !pickerMenu ||
       !selectedName || !selectedAvatar || !memberSearch || !memberList) {
     console.error('[BeeFlix Profiles] Expected page elements were not found.');
     return;
@@ -30,6 +31,7 @@
   let isMemberListOpen = false;
   let profileRequestSequence = 0;
   let profileState = { userId: null, total: 0, reviews: [], stats: null };
+  let activityState = { items: [], total: 0, loading: false };
 
   function normalizeId(value) {
     return String(value || '').replaceAll('-', '').toLocaleLowerCase();
@@ -180,6 +182,8 @@
     setPickerOpen(false);
     renderMemberList(memberSearch.value);
     if (options.updateUrl !== false) updateProfileUrl(member);
+    feedContainer.hidden = true;
+    profileContainer.hidden = false;
     loadProfile(member, false);
   }
 
@@ -299,6 +303,207 @@
     return article;
   }
 
+
+  function activityDate(timestamp) {
+    const date = new Date(Number(timestamp));
+    if (!Number.isFinite(date.getTime())) return '';
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+  }
+
+  function findMember(userId, userName) {
+    return members.find(member => normalizeId(member.userId) === normalizeId(userId))
+      || { userId: String(userId || ''), userName: String(userName || 'BeeFlix member') };
+  }
+
+  function buildActivityCard(entry) {
+    const card = document.createElement('article');
+    card.className = 'bf-activity-card';
+
+    const member = findMember(entry.UserId, entry.UserName);
+    const avatarLink = document.createElement('a');
+    avatarLink.className = 'bf-activity-avatar-link';
+    avatarLink.href = profileUrl(member);
+    avatarLink.title = 'Open member profile';
+    avatarLink.addEventListener('click', event => {
+      event.preventDefault();
+      selectMember(member);
+    });
+    const avatar = document.createElement('img');
+    avatar.className = 'bf-activity-avatar';
+    avatar.alt = '';
+    avatar.loading = 'lazy';
+    avatar.src = avatarUrl(member.userId, 96);
+    avatar.onerror = () => { avatar.style.visibility = 'hidden'; };
+    avatarLink.appendChild(avatar);
+
+    const body = document.createElement('div');
+    body.className = 'bf-activity-body';
+    const headline = document.createElement('p');
+    headline.className = 'bf-activity-headline';
+    const author = document.createElement('a');
+    author.className = 'bf-activity-author';
+    author.href = profileUrl(member);
+    author.textContent = member.userName;
+    author.addEventListener('click', event => {
+      event.preventDefault();
+      selectMember(member);
+    });
+
+    const type = String(entry.ActivityType || '');
+    const verb = document.createElement('span');
+    if (type === 'Reviewed') verb.textContent = ' reviewed ';
+    else if (type === 'Favorited') verb.textContent = ' added to favorites ';
+    else if (type === 'Watched') verb.textContent = entry.Completed ? ' finished watching ' : ' watched ';
+    else verb.textContent = ' had activity on ';
+
+    const item = entry.Item || {};
+    const itemId = String(item.Id || '');
+    const title = document.createElement('a');
+    title.className = 'bf-activity-title';
+    title.textContent = String(item.SeriesName
+      ? item.SeriesName + (item.SeasonNumber != null && item.EpisodeNumber != null
+        ? ` · S${item.SeasonNumber}:E${item.EpisodeNumber} · ${item.Name || ''}` : '')
+      : item.Name || 'an unavailable title');
+    if (/^[0-9a-f]{32}$/i.test(itemId)) {
+      title.href = `#/details?id=${encodeURIComponent(itemId)}`;
+      title.title = 'Open in Jellyfin';
+    } else {
+      title.removeAttribute('href');
+    }
+
+    headline.append(author, verb, title);
+    body.appendChild(headline);
+
+    if (type === 'Reviewed' && entry.Rating != null) {
+      const rating = document.createElement('div');
+      rating.className = 'bf-activity-rating';
+      rating.textContent = `★ ${Number(entry.Rating).toFixed(1).replace(/\\.0$/, '')}/5`;
+      body.appendChild(rating);
+    }
+    if (type === 'Reviewed' && entry.Content) {
+      const excerpt = document.createElement('p');
+      excerpt.className = 'bf-activity-excerpt';
+      excerpt.textContent = String(entry.Content);
+      body.appendChild(excerpt);
+    }
+    if (type === 'Watched' && !entry.Completed && Number(entry.Progress) > 0) {
+      const progress = document.createElement('span');
+      progress.className = 'bf-activity-progress-label';
+      progress.textContent = `Playback progress: ${Math.round(Math.max(0, Math.min(1, Number(entry.Progress))) * 100)}%`;
+      body.appendChild(progress);
+    }
+
+    const time = document.createElement('time');
+    time.className = 'bf-activity-time';
+    time.textContent = activityDate(entry.Timestamp);
+    if (Number.isFinite(Number(entry.Timestamp))) time.dateTime = new Date(Number(entry.Timestamp)).toISOString();
+    body.appendChild(time);
+
+    const visual = document.createElement('a');
+    visual.className = 'bf-activity-visual';
+    if (/^[0-9a-f]{32}$/i.test(itemId)) {
+      visual.href = `#/details?id=${encodeURIComponent(itemId)}`;
+      const poster = document.createElement('img');
+      poster.loading = 'lazy';
+      poster.alt = '';
+      poster.src = ApiClient.getUrl(`/Items/${encodeURIComponent(itemId)}/Images/Primary?width=220&quality=85`);
+      poster.onerror = () => { visual.textContent = '🎬'; };
+      visual.appendChild(poster);
+    } else {
+      visual.textContent = type === 'Reviewed' ? '★' : type === 'Favorited' ? '♥' : '▶';
+      visual.setAttribute('aria-hidden', 'true');
+    }
+    card.append(avatarLink, body, visual);
+    return card;
+  }
+
+  function renderCommunityFeed() {
+    const section = document.createElement('section');
+    section.className = 'bf-card bf-community-card';
+    const heading = document.createElement('div');
+    heading.className = 'bf-section-heading';
+    const title = document.createElement('h2');
+    title.textContent = 'Community activity';
+    const refresh = document.createElement('button');
+    refresh.type = 'button';
+    refresh.className = 'bf-feed-refresh';
+    refresh.textContent = activityState.loading ? 'Refreshing…' : 'Refresh';
+    refresh.disabled = activityState.loading;
+    refresh.addEventListener('click', () => loadCommunityFeed(false));
+    heading.append(title, refresh);
+
+    const list = document.createElement('div');
+    list.className = 'bf-activity-list';
+    if (!activityState.items.length) {
+      const empty = document.createElement('p');
+      empty.className = 'bf-muted';
+      empty.textContent = activityState.loading ? 'Loading recent activity…' : 'No community activity has been recorded yet.';
+      list.appendChild(empty);
+    } else {
+      activityState.items.forEach(entry => list.appendChild(buildActivityCard(entry)));
+    }
+    section.append(heading, list);
+
+    if (activityState.items.length < activityState.total) {
+      const more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'raised emby-button bf-load-more';
+      more.disabled = activityState.loading;
+      more.textContent = activityState.loading ? 'Loading…' : 'Load older activity';
+      more.addEventListener('click', () => loadCommunityFeed(true));
+      section.appendChild(more);
+    }
+    feedContainer.replaceChildren(section);
+  }
+
+  async function loadCommunityFeed(append) {
+    if (activityState.loading) return;
+    activityState.loading = true;
+    feedContainer.hidden = false;
+    profileContainer.hidden = true;
+    status.textContent = append ? 'Loading older community activity…' : 'Loading recent community activity…';
+    status.classList.remove('bf-error');
+    renderCommunityFeed();
+    const offset = append ? activityState.items.length : 0;
+    try {
+      const endpoint = ApiClient.getUrl(`/JellyfinEnhanced/activity?limit=50`);
+      const data = await ApiClient.ajax({ type: 'GET', url: endpoint, dataType: 'json' });
+      const page = Array.isArray(data.items) ? data.items : [];
+      activityState = {
+        items: append ? activityState.items.concat(page) : page,
+        total: append ? Math.max(activityState.total, offset + page.length) : page.length,
+        loading: false
+      };
+      renderCommunityFeed();
+      status.textContent = activityState.items.length
+        ? `Showing ${activityState.items.length} recent community events.`
+        : 'No community activity is available yet.';
+    } catch (error) {
+      activityState.loading = false;
+      const reason = await describeApiError(error);
+      renderCommunityFeed();
+      const message = /404/.test(reason)
+        ? 'Jellyfin Enhanced Activity Feed is disabled or unavailable. An administrator needs to enable Activity Feed in Jellyfin Enhanced settings.'
+        : `Could not load community activity: ${reason}`;
+      status.textContent = message;
+      status.classList.add('bf-error');
+      const hint = document.createElement('p');
+      hint.className = 'bf-muted bf-feed-hint';
+      hint.textContent = 'BeeFlix uses Enhanced for historical watch and review events. It does not access live streams.';
+      feedContainer.querySelector('.bf-community-card')?.appendChild(hint);
+    }
+  }
+
+  function showCommunity() {
+    selectedMember = null;
+    selectedName.textContent = 'Browse members';
+    selectedAvatar.hidden = true;
+    updateProfileUrl(null);
+    profileContainer.hidden = true;
+    feedContainer.hidden = false;
+    loadCommunityFeed(false);
+  }
+
   async function copyText(text) {
     try {
       if (navigator.clipboard?.writeText && window.isSecureContext) {
@@ -348,6 +553,24 @@
 
     const actions = document.createElement('div');
     actions.className = 'bf-profile-actions';
+    const share = document.createElement('button');
+    share.type = 'button';
+    share.className = 'raised emby-button bf-share-button';
+    share.textContent = 'Share profile link';
+    share.addEventListener('click', () => copyText(profileUrl(member)));
+    actions.appendChild(share);
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'raised emby-button bf-community-back';
+    back.textContent = '← Community activity';
+    back.addEventListener('click', showCommunity);
+    actions.appendChild(back);
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'raised emby-button bf-community-back';
+    back.textContent = '← Community activity';
+    back.addEventListener('click', showCommunity);
+    actions.appendChild(back);
     const share = document.createElement('button');
     share.type = 'button';
     share.className = 'raised emby-button bf-share-button';
@@ -478,10 +701,11 @@
         return;
       }
 
-      status.textContent = `Loaded ${members.length} members. Choose a profile to explore.`;
-      const currentUserId = ApiClient.getCurrentUserId?.();
-      const currentMember = members.find(member => normalizeId(member.userId) === normalizeId(currentUserId));
-      if (currentMember) selectMember(currentMember, { updateUrl: false });
+      status.textContent = `Loaded ${members.length} members. Browse the community activity or choose a profile.`;
+      selectedName.textContent = 'Browse members';
+      selectedAvatar.hidden = true;
+      profileContainer.hidden = true;
+      loadCommunityFeed(false);
     } catch (error) {
       console.error('[BeeFlix Profiles] Failed to load member directory:', error);
       selectedName.textContent = 'Could not load members';
