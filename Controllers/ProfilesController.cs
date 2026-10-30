@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Security.Claims;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Controller.Library;
+using BeeFlix.Profiles.Services;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Model.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -22,14 +23,16 @@ public sealed class ProfilesController : ControllerBase
     private readonly ILibraryManager _libraryManager;
     private readonly IPluginManager _pluginManager;
     private readonly ILogger<ProfilesController> _logger;
+    private readonly AchievementService _achievements;
     private string? _reviewStoreDiagnostic;
 
-    public ProfilesController(IServiceProvider services, IUserManager users, ILibraryManager libraryManager, IPluginManager pluginManager, ILogger<ProfilesController> logger)
+    public ProfilesController(IServiceProvider services, IUserManager users, ILibraryManager libraryManager, IPluginManager pluginManager, AchievementService achievements, ILogger<ProfilesController> logger)
     {
         _services = services;
         _users = users;
         _libraryManager = libraryManager;
         _pluginManager = pluginManager;
+        _achievements = achievements;
         _logger = logger;
     }
 
@@ -80,7 +83,7 @@ public sealed class ProfilesController : ControllerBase
     public IActionResult Health() => Ok(new
     {
         plugin = "BeeFlix Profiles",
-        version = "0.5.1.0",
+        version = "0.6.0.0",
         enhancedIntegration = FindReviewStore() != null,
         userFacingNavigation = PluginPagesRegistrationService.IsRegistered
     });
@@ -115,6 +118,35 @@ public sealed class ProfilesController : ControllerBase
         {
             _logger.LogError(ex, "Failed to list BeeFlix profile members");
             return StatusCode(503, new { message = "Could not load the member directory. Check the Jellyfin server logs." });
+        }
+    }
+
+    [HttpGet("users/{userId}/achievements")]
+    public IActionResult GetUserAchievements(string userId)
+    {
+        if (Plugin.Instance is null || !Plugin.Instance.Configuration.Enabled) return NotFound();
+        if (!Guid.TryParse(userId, out var targetId)) return BadRequest(new { message = "Invalid user id." });
+
+        var viewerId = GetViewerId();
+        if (viewerId == Guid.Empty) return Unauthorized();
+        var viewer = _users.GetUserById(viewerId);
+        if (viewer is null) return Unauthorized();
+        var isAdmin = SafelyHasPermission(viewer, "IsAdministrator");
+
+        var targetUser = _users.GetUserById(targetId);
+        if (targetUser is null && !isAdmin) return NotFound();
+        if (!isAdmin && targetId != viewerId && targetUser is not null && IsHiddenOrDisabled(targetUser))
+            return NotFound();
+        if (targetUser is null) return NotFound();
+
+        try
+        {
+            return Ok(_achievements.GetAchievements(targetUser));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to calculate BeeFlix achievements for profile {UserId}", targetId);
+            return StatusCode(503, new { message = "Could not calculate achievements. Check the Jellyfin server logs." });
         }
     }
 
