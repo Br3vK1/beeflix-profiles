@@ -16,26 +16,32 @@
 
     const script = document.createElement('script');
     script.async = true;
-    script.dataset.beeflixVersion = '0.6.0.3';
+    script.dataset.beeflixVersion = '0.6.0.4';
     script.src = window.ApiClient && typeof window.ApiClient.getUrl === 'function'
-      ? window.ApiClient.getUrl('/BeeFlixProfiles/profiles.js?v=0.6.0.3')
-      : '/BeeFlixProfiles/profiles.js?v=0.6.0.3';
+      ? window.ApiClient.getUrl('/BeeFlixProfiles/profiles.js?v=0.6.0.4')
+      : '/BeeFlixProfiles/profiles.js?v=0.6.0.4';
 
     script.onload = () => {
       root.dataset.bfScriptState = window.BeeFlixProfilesPageInitialized ? 'loaded' : 'error';
       if (!window.BeeFlixProfilesPageInitialized) {
-        setStatus(root, 'BeeFlix Community script loaded but did not initialize. Build 0.6.0.3; check the browser console for the exact cause.', true);
+        setStatus(root, 'BeeFlix Community script loaded but did not initialize. Build 0.6.0.4; check the browser console for the exact cause.', true);
       }
     };
     script.onerror = () => {
       root.dataset.bfScriptState = 'error';
-      setStatus(root, 'Could not load BeeFlix Community JavaScript (build 0.6.0.3). Check the Jellyfin server logs.', true);
+      setStatus(root, 'Could not load BeeFlix Community JavaScript (build 0.6.0.4). Check the Jellyfin server logs.', true);
     };
     document.head.appendChild(script);
   }
 
   function scanForPage() {
-    const root = document.querySelector(pageSelector);
+    const roots = Array.from(document.querySelectorAll(pageSelector));
+    const root = roots.filter(candidate =>
+      candidate.isConnected &&
+      candidate.getClientRects().length > 0 &&
+      getComputedStyle(candidate).visibility !== 'hidden' &&
+      !candidate.closest('[hidden]')
+    ).at(-1) || roots.at(-1);
     if (root) initializePage(root);
   }
 
