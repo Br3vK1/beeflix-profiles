@@ -66,7 +66,7 @@
   appBack.type = 'button';
   appBack.className = 'bf-app-back';
   appBack.setAttribute('aria-label', 'Back');
-  appBack.innerHTML = '<span class="material-icons" aria-hidden="true">arrow_back</span>';
+  appBack.innerHTML = '<span class="material-icons" aria-hidden="true">arrow_back</span><span class="bf-app-back-label">Back</span>';
   const appBrand = document.createElement('div');
   appBrand.className = 'bf-app-topbar-brand';
   appBrand.innerHTML = '<span class="material-icons" aria-hidden="true">groups</span><span>BEEFLIX</span>';
@@ -755,8 +755,13 @@
     const candidates = [
       ...profileActivity.map(entry => entry.Item?.Id || ''),
       ...reviews.map(review => review.jellyfinItemId || '')
-    ].filter((id, index, all) => /^[0-9a-f]{32}$/i.test(String(id)) && all.indexOf(id) === index)
-      .slice(0, 12);
+    ].filter((id, index, all) => /^[0-9a-f]{32}$/i.test(String(id)) && all.indexOf(id) === index);
+    // Shuffle the full available watch/review pool so repeat profile visits don't
+    // always showcase the same first few titles.
+    for (let i = candidates.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    }
     const resolved = [];
     for (const id of candidates) {
       try {
@@ -771,7 +776,7 @@
           : (type === 'movie' || type === 'series' ? item.Id : (item.SeriesId || item.Id));
         if (/^[0-9a-f]{32}$/i.test(String(backdropId)) && !resolved.includes(backdropId)) {
           resolved.push(backdropId);
-          if (resolved.length === 3) break;
+          if (resolved.length === 5) break;
         }
       } catch (error) {
         console.debug('[BeeFlix Profiles] Could not resolve a watched title for hero artwork:', id, error);
@@ -861,12 +866,6 @@
 
     const actions = document.createElement('div');
     actions.className = 'bf-profile-actions';
-    const back = document.createElement('button');
-    back.type = 'button';
-    back.className = 'raised emby-button bf-community-back';
-    back.textContent = '← Community activity';
-    back.addEventListener('click', showCommunity);
-    actions.appendChild(back);
     const share = document.createElement('button');
     share.type = 'button';
     share.className = 'raised emby-button bf-share-button';
