@@ -73,7 +73,10 @@
   appSearch.className = 'bf-profile-searchbar';
   appSearch.setAttribute('role', 'search');
   appTopbar.append(appBack, appSearch, appBrand);
-  pageRoot.prepend(appTopbar);
+  const appTopbarSpacer = document.createElement('div');
+  appTopbarSpacer.className = 'bf-app-topbar-spacer';
+  pageRoot.prepend(appTopbarSpacer);
+  document.body.appendChild(appTopbar);
 
   // Jellyfin is an SPA and can retain hidden plugin pages in the DOM.
   // Hide its native header only while this BeeFlix page is genuinely visible.
@@ -90,6 +93,16 @@
     const active = isBeeFlixPageVisible();
     if (document.body.classList.contains('bf-beeflix-page-active') !== active) {
       document.body.classList.toggle('bf-beeflix-page-active', active);
+    }
+    appTopbar.style.display = active ? 'grid' : 'none';
+    appTopbarSpacer.style.height = active ? 'calc(58px + env(safe-area-inset-top, 0px))' : '0px';
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta && active) {
+      if (!themeMeta.dataset.bfOriginalTheme) themeMeta.dataset.bfOriginalTheme = themeMeta.content || '#101827';
+      themeMeta.content = '#131d2c';
+    } else if (themeMeta && !active && themeMeta.dataset.bfOriginalTheme) {
+      themeMeta.content = themeMeta.dataset.bfOriginalTheme;
+      delete themeMeta.dataset.bfOriginalTheme;
     }
   }
   const pageVisibilityObserver = new MutationObserver(syncBeeFlixHeaderState);
@@ -1280,7 +1293,13 @@
       pageVisibilityObserver.disconnect();
       window.removeEventListener('hashchange', syncBeeFlixHeaderState);
       document.body.classList.remove('bf-beeflix-page-active', 'bf-beeflix-profile-active');
+      const themeMeta = document.querySelector('meta[name="theme-color"]');
+      if (themeMeta?.dataset.bfOriginalTheme) {
+        themeMeta.content = themeMeta.dataset.bfOriginalTheme;
+        delete themeMeta.dataset.bfOriginalTheme;
+      }
       appTopbar.remove();
+      appTopbarSpacer.remove();
     }
   });
 
