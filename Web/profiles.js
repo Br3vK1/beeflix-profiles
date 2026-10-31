@@ -87,7 +87,8 @@
       getComputedStyle(pageRoot).display !== 'none';
     pageIsActive = visible;
     document.body.classList.toggle('bf-beeflix-page-active', visible);
-    appTopbar.style.display = visible ? 'grid' : 'none';
+    const nextDisplay = visible ? 'grid' : 'none';
+    if (appTopbar.style.display !== nextDisplay) appTopbar.style.display = nextDisplay;
   }
   pageVisibilityObserver = new MutationObserver(syncBeeFlixPageVisibility);
   pageVisibilityObserver.observe(document.body, {
