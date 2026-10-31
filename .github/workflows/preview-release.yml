@@ -10,7 +10,7 @@ permissions:
 jobs:
   publish-preview:
     # Publishing is intentionally gated to one explicit commit message.
-    if: ${{ github.event.head_commit.message == 'Publish 1.0.0 reward-accent preview' }}
+    if: ${{ github.event.head_commit.message == 'Publish 1.0.1 reward-accent preview' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out tested source
@@ -31,7 +31,7 @@ jobs:
         run: dotnet restore BeeFlix.Profiles.csproj
 
       - name: Build and publish
-        run: dotnet publish BeeFlix.Profiles.csproj --configuration Release --output ./publish -p:Version="1.0.0.0" -p:AssemblyVersion="1.0.0.0" -p:FileVersion="1.0.0.0"
+        run: dotnet publish BeeFlix.Profiles.csproj --configuration Release --output ./publish -p:Version="1.0.1.0" -p:AssemblyVersion="1.0.1.0" -p:FileVersion="1.0.1.0"
 
       - name: Package plugin and calculate catalog checksum
         shell: bash
@@ -43,7 +43,7 @@ jobs:
           {
             "guid": "db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21",
             "name": "BeeFlix Profiles",
-            "version": "1.0.0.0",
+            "version": "1.0.1.0",
             "targetAbi": "12.0.0.0"
           }
           EOF
@@ -58,9 +58,9 @@ jobs:
         run: |
           set -euo pipefail
           cat > release-notes.md <<'EOF'
-          BeeFlix Profiles 1.0.0 preview.
+          BeeFlix Profiles 1.0.1 preview.
 
-          Adds the achievement reward catalog, equip/unequip validation, member identity API, reward badges and profile links in BeeFlix activity/reviews, and the optional Jellyfin Enhanced review identity injector. This is a prerelease for Jellyfin 12 (target ABI 12.0.0.0). The plugin's internal/catalog version is numeric (1.0.0.0) for Jellyfin compatibility; the GitHub release remains marked as a preview. Back up the existing plugin DLL and configuration before upgrading. Live Jellyfin testing is required before stable release.
+          Adds the achievement reward catalog, equip/unequip validation, member identity API, reward badges and profile links in BeeFlix activity/reviews, and the optional Jellyfin Enhanced review identity injector. This is a prerelease for Jellyfin 12 (target ABI 12.0.0.0). The plugin's internal/catalog version is numeric (1.0.1.0) for Jellyfin compatibility; the GitHub release remains marked as a preview. Back up the existing plugin DLL and configuration before upgrading. Live Jellyfin testing is required before stable release.
           EOF
           if gh release view "$TAG_NAME" >/dev/null 2>&1; then
             gh release upload "$TAG_NAME" ./BeeFlixProfiles-jellyfin12.zip --clobber
@@ -88,7 +88,7 @@ jobs:
           const fs = require('fs');
           const file = 'manifest.json';
           const pluginGuid = 'db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21';
-          const version = '1.0.0.0';
+          const version = '1.0.1.0';
           const releaseUrl = 'https://github.com/Br3vK1/beeflix-profiles/releases/download/v1.0.0-preview/BeeFlixProfiles-jellyfin12.zip';
           const manifest = JSON.parse(fs.readFileSync(file, 'utf8'));
           const plugin = manifest.find(p => p.guid === pluginGuid);
@@ -102,7 +102,7 @@ jobs:
             timestamp: new Date().toISOString()
           };
           if (!entry.checksum || !/^[a-f0-9]{32}$/i.test(entry.checksum)) throw new Error('Could not calculate a valid MD5 checksum for the ZIP.');
-          plugin.versions = [entry, ...(plugin.versions || []).filter(v => !['1.0.0.0', '1.0.0-preview'].includes(v.version))].slice(0, 10);
+          plugin.versions = [entry, ...(plugin.versions || []).filter(v => !['1.0.1.0', '1.0.0-preview'].includes(v.version))].slice(0, 10);
           fs.writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n');
           NODE
 
@@ -115,5 +115,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add manifest.json
-          git commit -m "Publish BeeFlix Profiles 1.0.0 numeric preview to catalog"
+          git commit -m "Publish BeeFlix Profiles 1.0.1 numeric preview to catalog"
           git push origin HEAD:main
