@@ -464,7 +464,7 @@
     }
   }
 
-  function buildReviewCard(review) {
+  function buildReviewCard(review, member) {
     const article = document.createElement('article');
     article.className = 'bf-review';
 
@@ -556,7 +556,15 @@
     date.className = 'bf-review-date';
     date.textContent = formatDate(review.updatedAt || review.createdAt);
 
-    details.append(top, metadata, body, date);
+    const authorLine = document.createElement('div');
+    authorLine.className = 'bf-review-author-line';
+    const authorLink = document.createElement('a');
+    authorLink.href = profileUrl(member);
+    authorLink.textContent = member.userName;
+    authorLink.addEventListener('click', event => { event.preventDefault(); selectMember(member); });
+    authorLine.append(authorLink, createRewardBadge(member, true));
+    article.style.setProperty('--bf-member-tag-color', member.tagColor || '#F2C94C');
+    details.append(authorLine, top, metadata, body, date);
     article.append(posterFrame, details);
     return article;
   }
@@ -1198,7 +1206,7 @@
     reviewsList.className = 'bf-reviews-list';
 
     if (reviews.length) {
-      reviews.forEach(review => reviewsList.appendChild(buildReviewCard(review)));
+      reviews.forEach(review => reviewsList.appendChild(buildReviewCard(review, member)));
     } else {
       const empty = document.createElement('p');
       empty.className = 'bf-muted';
