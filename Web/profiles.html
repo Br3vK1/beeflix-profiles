@@ -1129,6 +1129,37 @@
                         }
                     }
 
+
+                    /* 0.8.5: override the older in-flow toolbar rule with matching ID specificity. */
+                    #BeeFlixProfilesPage .bf-app-topbar {
+                        position: fixed !important;
+                        top: env(safe-area-inset-top, 0px) !important;
+                        left: 0 !important;
+                        right: 0 !important;
+                        bottom: auto !important;
+                        z-index: 2147483000 !important;
+                        width: 100vw !important;
+                        max-width: none !important;
+                        margin: 0 !important;
+                        transform: none !important;
+                    }
+                    #BeeFlixProfilesPage .bf-app-topbar-spacer {
+                        display: block !important;
+                        height: calc(58px + env(safe-area-inset-top, 0px)) !important;
+                        flex: 0 0 auto !important;
+                    }
+                    @media (max-width: 700px) {
+                        #BeeFlixProfilesPage .bf-app-topbar {
+                            min-height: 52px !important;
+                            grid-template-columns: auto minmax(0,1fr) !important;
+                            padding-top: .4rem !important;
+                            padding-bottom: .4rem !important;
+                        }
+                        #BeeFlixProfilesPage .bf-app-topbar-spacer {
+                            height: calc(52px + env(safe-area-inset-top, 0px)) !important;
+                        }
+                    }
+
 </style>
 
                 <main class="bf-wrap">
@@ -1139,7 +1170,7 @@
                             <h1>Movies are better shared.</h1>
                             <p class="bf-muted">See what your people have watched, reviewed, and achieved.</p>
                         </div>
-                        <div class="bf-brand-tag"><span class="material-icons">auto_awesome</span> Your crew, your taste <span id="bf-build-version" class="bf-build-version">Build 0.7.4</span></div>
+                        <div class="bf-brand-tag"><span class="material-icons">auto_awesome</span> Your crew, your taste <span id="bf-build-version" class="bf-build-version">Build 0.8.5</span></div>
                     </header>
 
                     <section class="bf-card bf-directory-card" aria-labelledby="bf-profile-lookup-title">
