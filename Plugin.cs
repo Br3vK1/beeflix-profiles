@@ -26,4 +26,12 @@ public sealed class PluginConfiguration : BasePluginConfiguration
     public List<CompletedSeriesRecord> CompletedSeries { get; set; } = [];
     public List<AchievementUnlockRecord> AchievementUnlocks { get; set; } = [];
     public List<string> AchievementInitializedUsers { get; set; } = [];
+    public List<EquippedRewardRecord> EquippedRewards { get; set; } = [];
+}
+
+public sealed class EquippedRewardRecord
+{
+    public string UserId { get; set; } = string.Empty;
+    public string RewardId { get; set; } = BeeFlix.Profiles.Services.RewardCatalog.DefaultId;
+}
 }
