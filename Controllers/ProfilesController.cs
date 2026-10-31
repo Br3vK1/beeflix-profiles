@@ -233,7 +233,7 @@ public sealed class ProfilesController : ControllerBase
 
         try
         {
-            var achievements = _achievements.GetAchievements(target);
+            _achievements.GetAchievements(target);
             var unlockedIds = Plugin.Instance.Configuration.AchievementUnlocks
                 .Where(item => string.Equals(item.UserId, targetId.ToString("N"), StringComparison.OrdinalIgnoreCase))
                 .Select(item => item.AchievementId)
