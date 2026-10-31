@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   publish-preview:
-    # Build, package, and catalog publication happen only after this exact gated commit. 0.8.1 preview gate: add a scoped glass toolbar below Jellyfin's native navigation.
+    # Build, package, and catalog publication happen only after this exact gated commit. 0.8.1 preview gate: replace Jellyfin navigation only while BeeFlix is visible with a sticky flush-top glass toolbar.
     # This gate prevents normal feature pushes from publishing a release.
     if: ${{ github.event.head_commit.message == 'Publish 0.8.1 preview from CI' }}
     runs-on: ubuntu-latest
