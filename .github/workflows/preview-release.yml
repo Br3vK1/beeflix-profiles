@@ -1,17 +1,16 @@
-name: Publish BeeFlix Profiles Preview
+name: Publish BeeFlix Profiles 1.0 Preview
 
 on:
   push:
-    branches: ["feature/profile-cinematic-header-v0.7.2"]
+    branches: ["feature/1.0-rewards-identity-activity"]
 
 permissions:
   contents: write
 
 jobs:
   publish-preview:
-    # Build, package, and catalog publication happen only after this exact gated commit. 0.8.5 preview gate: publish corrected toolbar DOM placement.
-    # This gate prevents normal feature pushes from publishing a release.
-    if: ${{ github.event.head_commit.message == 'Publish 0.8.5 preview from CI' }}
+    # Publishing is intentionally gated to one explicit commit message.
+    if: ${{ github.event.head_commit.message == 'Publish 1.0.0 preview from CI' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out tested source
@@ -22,17 +21,17 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Check profile UI JavaScript syntax
-        run: node --check Web/profiles.js
-
-      - name: Check page loader JavaScript syntax
-        run: node --check Web/profiles-loader.js
+      - name: Validate JavaScript
+        run: |
+          node --check Web/profiles.js
+          node --check Web/profiles-loader.js
+          node --check Web/enhanced-identity.js
 
       - name: Restore
         run: dotnet restore BeeFlix.Profiles.csproj
 
       - name: Build and publish
-        run: dotnet publish BeeFlix.Profiles.csproj --configuration Release --output ./publish -p:Version="0.8.5" -p:AssemblyVersion="0.8.5" -p:FileVersion="0.8.5"
+        run: dotnet publish BeeFlix.Profiles.csproj --configuration Release --output ./publish -p:Version="1.0.0-preview" -p:AssemblyVersion="1.0.0.0" -p:FileVersion="1.0.0.0"
 
       - name: Package plugin and calculate catalog checksum
         shell: bash
@@ -44,7 +43,7 @@ jobs:
           {
             "guid": "db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21",
             "name": "BeeFlix Profiles",
-            "version": "0.8.5",
+            "version": "1.0.0-preview",
             "targetAbi": "12.0.0.0"
           }
           EOF
@@ -54,22 +53,22 @@ jobs:
       - name: Publish or update GitHub preview release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG_NAME: v0.8.5-preview
+          TAG_NAME: v1.0.0-preview
         shell: bash
         run: |
           set -euo pipefail
           cat > release-notes.md <<'EOF'
-          Preview build for BeeFlix Community: Restores Jellyfin native navigation on non-profile pages while retaining BeeFlix's custom navigation bar.
+          BeeFlix Profiles 1.0.0 preview.
 
-          Requires compatible Jellyfin 12 builds of Plugin Pages and File Transformation. The build is gated by JavaScript syntax checks and a Jellyfin 12 / .NET 10 publish. Live Jellyfin behavior still needs smoke-testing. This version is listed in the BeeFlix plugin catalog as a preview.
+          Adds the achievement reward catalog, equip/unequip validation, member identity API, reward badges and profile links in BeeFlix activity/reviews, and the optional Jellyfin Enhanced review identity injector. This is a prerelease for Jellyfin 12 (target ABI 12.0.0.0). Back up the existing plugin DLL and configuration before upgrading. Live Jellyfin testing is required before stable release.
           EOF
           if gh release view "$TAG_NAME" >/dev/null 2>&1; then
             gh release upload "$TAG_NAME" ./BeeFlixProfiles-jellyfin12.zip --clobber
-            gh release edit "$TAG_NAME" --title "BeeFlix Profiles 0.8.5 Preview" --prerelease --notes-file release-notes.md
+            gh release edit "$TAG_NAME" --title "BeeFlix Profiles 1.0.0 Preview" --prerelease --notes-file release-notes.md
           else
             gh release create "$TAG_NAME" ./BeeFlixProfiles-jellyfin12.zip \
               --target "$GITHUB_SHA" \
-              --title "BeeFlix Profiles 0.8.5 Preview" \
+              --title "BeeFlix Profiles 1.0.0 Preview" \
               --prerelease \
               --notes-file release-notes.md
           fi
@@ -89,14 +88,14 @@ jobs:
           const fs = require('fs');
           const file = 'manifest.json';
           const pluginGuid = 'db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21';
-          const version = '0.8.5';
-          const releaseUrl = 'https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.8.5-preview/BeeFlixProfiles-jellyfin12.zip';
-          let manifest = JSON.parse(fs.readFileSync(file, 'utf8'));
-          let plugin = manifest.find(p => p.guid === pluginGuid);
+          const version = '1.0.0-preview';
+          const releaseUrl = 'https://github.com/Br3vK1/beeflix-profiles/releases/download/v1.0.0-preview/BeeFlixProfiles-jellyfin12.zip';
+          const manifest = JSON.parse(fs.readFileSync(file, 'utf8'));
+          const plugin = manifest.find(p => p.guid === pluginGuid);
           if (!plugin) throw new Error('BeeFlix Profiles entry was not found in the plugin catalog.');
           const entry = {
             version,
-            changelog: 'PREVIEW: Restores native Jellyfin header after a route-lifecycle regression. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.',
+            changelog: 'PREVIEW: Adds unlockable member rewards, equipped profile titles, reward badges, profile identity links, and optional Jellyfin Enhanced review integration. Requires Jellyfin 12 (ABI 12.0.0.0). Back up the existing plugin and configuration before upgrading; live testing is still required.',
             targetAbi: '12.0.0.0',
             sourceUrl: releaseUrl,
             checksum: process.env.PLUGIN_MD5,
@@ -111,11 +110,10 @@ jobs:
         working-directory: catalog-repo
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG_NAME: v0.8.5-preview
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add manifest.json
-          git commit -m "Add BeeFlix Profiles 0.8.5 preview to catalog"
+          git commit -m "Add BeeFlix Profiles 1.0.0 preview to catalog"
           git push origin HEAD:main
