@@ -8,6 +8,14 @@
     "owner": "Br3vK1",
     "versions": [
       {
+        "version": "0.7.9",
+        "changelog": "PREVIEW: Restores native Jellyfin header after a route-lifecycle regression. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.7.9-preview/BeeFlixProfiles-jellyfin12.zip",
+        "checksum": "b1bb906f5f4f3879c55180fbd35fb0e4",
+        "timestamp": "2026-10-31T01:39:51.160Z"
+      },
+      {
         "version": "0.7.7",
         "changelog": "PREVIEW: Adds a viewport-wide custom header, centered profile identity, and a broader randomized movie/series backdrop pool from played library items. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
         "targetAbi": "12.0.0.0",
@@ -78,14 +86,6 @@
         "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.6.0.5-preview/BeeFlixProfiles-jellyfin12.zip",
         "checksum": "fe2afab9b806b1262882727f1741822f",
         "timestamp": "2026-10-30T18:03:06.360Z"
-      },
-      {
-        "version": "0.6.0.4",
-        "changelog": "PREVIEW: Adds the unified BeeFlix Community activity timeline, permanent movie and completed-series achievements, background unlock detection, and profile achievement displays. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
-        "targetAbi": "12.0.0.0",
-        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.6.0.4-preview/BeeFlixProfiles-jellyfin12.zip",
-        "checksum": "8dd8a670808ee28d2b7995e1a6a225db",
-        "timestamp": "2026-10-30T17:20:38.947Z"
       }
     ]
   }
