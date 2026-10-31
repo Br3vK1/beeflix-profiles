@@ -1,6 +1,7 @@
 /* BeeFlix Profiles — Jellyfin Enhanced review identity integration.
- * Adds the review author's equipped BeeFlix reward beside their name and links
- * their name/avatar to their BeeFlix profile. Enhanced review data is untouched.
+ * Adds the review author's equipped BeeFlix reward beside their name, tints the
+ * individual review card with that reward's color, and links name/avatar to profile.
+ * Enhanced review data and ratings are never modified.
  */
 (() => {
   'use strict';
@@ -14,7 +15,7 @@
   const api = () => window.ApiClient;
 
   function userIdFromCard(card) {
-    const avatar = card.querySelector('img.je-user-avatar');
+    const avatar = card.querySelector('img.je-user-avatar, .je-user-review-avatar-wrapper img, img[src*="/Users/"]');
     const src = avatar?.getAttribute('src') || '';
     const match = src.match(/\/Users\/([a-f0-9-]{32,36})\/Images\/Primary/i);
     return match ? match[1].replaceAll('-', '').toLowerCase() : null;
@@ -28,11 +29,30 @@
       .bf-enhanced-author-line { display:inline-flex; align-items:center; flex-wrap:wrap; gap:6px; }
       .bf-enhanced-reward-tag {
         display:inline-flex; align-items:center; min-height:19px; padding:2px 7px;
-        border:1px solid color-mix(in srgb, var(--bf-reward-color, #f2c94c) 48%, transparent);
+        border:1px solid color-mix(in srgb, var(--bf-reward-color, #f2c94c) 58%, transparent);
         border-radius:999px; color:var(--bf-reward-color, #f2c94c);
-        background:color-mix(in srgb, var(--bf-reward-color, #f2c94c) 12%, transparent);
-        font-size:10px; font-weight:750; line-height:1.2; letter-spacing:.01em;
+        background:color-mix(in srgb, var(--bf-reward-color, #f2c94c) 15%, transparent);
+        box-shadow:0 0 12px color-mix(in srgb, var(--bf-reward-color, #f2c94c) 12%, transparent);
+        font-size:10px; font-weight:800; line-height:1.2; letter-spacing:.01em;
         vertical-align:middle; white-space:nowrap;
+      }
+      .tmdb-review-card.je-user-review-card.bf-enhanced-reward-card {
+        --bf-review-accent: var(--bf-reward-color, #f2c94c);
+        border-color:color-mix(in srgb, var(--bf-review-accent) 62%, rgba(255,255,255,.16)) !important;
+        border-left:3px solid var(--bf-review-accent) !important;
+        background:
+          linear-gradient(115deg,
+            color-mix(in srgb, var(--bf-review-accent) 13%, transparent),
+            transparent 58%),
+          var(--jf-palette-background-paper, rgba(24,35,53,.72)) !important;
+        box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--bf-review-accent) 10%, transparent),
+          0 5px 18px color-mix(in srgb, var(--bf-review-accent) 9%, transparent);
+        transition:border-color .18s ease, background .18s ease, box-shadow .18s ease;
+      }
+      .tmdb-review-card.je-user-review-card.bf-enhanced-reward-card:hover {
+        border-color:color-mix(in srgb, var(--bf-review-accent) 82%, white 18%) !important;
+        box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--bf-review-accent) 17%, transparent),
+          0 7px 22px color-mix(in srgb, var(--bf-review-accent) 14%, transparent);
       }
       .tmdb-review-author.bf-enhanced-profile-link,
       .je-user-review-avatar-wrapper.bf-enhanced-profile-link { cursor:pointer; }
@@ -82,8 +102,7 @@
 
   function applyIdentity(card, identity) {
     const author = card.querySelector('.tmdb-review-author');
-    const authorInfo = card.querySelector('.tmdb-review-author-info');
-    if (!author || !authorInfo || !identity || !identity.tag) return;
+    if (!author || !identity || !identity.tag) return;
 
     let line = author.parentElement?.classList.contains('bf-enhanced-author-line')
       ? author.parentElement : null;
@@ -100,9 +119,13 @@
       tag.className = 'bf-enhanced-reward-tag';
       line.appendChild(tag);
     }
+    const rewardColor = identity.tagColor || '#F2C94C';
     tag.textContent = identity.tag;
-    tag.style.setProperty('--bf-reward-color', identity.tagColor || '#F2C94C');
+    tag.style.setProperty('--bf-reward-color', rewardColor);
     tag.title = 'BeeFlix member reward: ' + identity.tag;
+
+    card.classList.add('bf-enhanced-reward-card');
+    card.style.setProperty('--bf-reward-color', rewardColor);
 
     const userId = String(identity.userId || '').replaceAll('-', '').toLowerCase();
     if (userId) {
