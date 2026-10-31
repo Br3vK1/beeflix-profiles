@@ -1160,6 +1160,37 @@
                         }
                     }
 
+
+                    /* 1.0 reward identities and title customization */
+                    #BeeFlixProfilesPage .bf-member-tag {
+                        display:inline-flex; align-items:center; width:max-content; max-width:100%;
+                        padding:.28rem .65rem; border-radius:999px;
+                        color:var(--bf-member-tag-color, #F2C94C);
+                        background:color-mix(in srgb, var(--bf-member-tag-color, #F2C94C) 15%, transparent);
+                        border:1px solid color-mix(in srgb, var(--bf-member-tag-color, #F2C94C) 48%, transparent);
+                        box-shadow:0 0 16px color-mix(in srgb, var(--bf-member-tag-color, #F2C94C) 12%, transparent);
+                        font-size:.76rem; font-weight:800; letter-spacing:.015em; line-height:1.25;
+                    }
+                    #BeeFlixProfilesPage .bf-member-tag.is-compact { margin:0 .15rem; padding:.16rem .45rem; font-size:.68rem; vertical-align:middle; }
+                    #BeeFlixProfilesPage .bf-profile-identity-meta { display:flex; align-items:center; gap:.5rem; margin-top:.45rem; }
+                    #BeeFlixProfilesPage .bf-edit-profile-button { border-color:rgba(242,201,76,.4); }
+                    #BeeFlixProfilesPage .bf-rewards-section { margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--jf-palette-divider, rgba(128,128,128,.2)); }
+                    #BeeFlixProfilesPage .bf-rewards-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:.7rem; }
+                    #BeeFlixProfilesPage .bf-reward-card { min-width:0; padding:.9rem; border:1px solid var(--jf-palette-divider, rgba(128,128,128,.2)); border-radius:13px; background:rgba(128,128,128,.035); }
+                    #BeeFlixProfilesPage .bf-reward-card.is-unlocked { border-color:rgba(242,201,76,.28); }
+                    #BeeFlixProfilesPage .bf-reward-card p { margin:.55rem 0; color:var(--jf-palette-text-secondary, inherit); font-size:.82rem; }
+                    #BeeFlixProfilesPage .bf-reward-card small { color:var(--jf-palette-text-secondary, inherit); font-size:.72rem; }
+                    #BeeFlixProfilesPage .bf-reward-editor-backdrop { position:fixed; inset:0; z-index:2147483500; display:grid; place-items:center; padding:1rem; background:rgba(0,0,0,.68); backdrop-filter:blur(10px); }
+                    #BeeFlixProfilesPage .bf-reward-editor { width:min(560px,100%); max-height:min(80vh,760px); overflow:auto; padding:1.2rem; border:1px solid rgba(255,255,255,.16); border-radius:20px; background:var(--jf-palette-background-paper,#202735); box-shadow:0 25px 80px rgba(0,0,0,.45); }
+                    #BeeFlixProfilesPage .bf-reward-choice-list { display:grid; gap:.55rem; }
+                    #BeeFlixProfilesPage .bf-reward-choice { display:grid; grid-template-columns:1fr auto; gap:.35rem .8rem; align-items:center; width:100%; padding:.8rem; text-align:left; color:inherit; border:1px solid var(--jf-palette-divider,rgba(128,128,128,.25)); border-radius:12px; background:rgba(128,128,128,.05); cursor:pointer; }
+                    #BeeFlixProfilesPage .bf-reward-choice:disabled { opacity:.5; cursor:not-allowed; }
+                    #BeeFlixProfilesPage .bf-reward-choice small { grid-column:1; color:var(--jf-palette-text-secondary,inherit); }
+                    #BeeFlixProfilesPage .bf-reward-choice-state { grid-column:2; grid-row:1 / span 2; font-size:.78rem; font-weight:800; }
+                    #BeeFlixProfilesPage .bf-reward-choice.is-equipped { border-color:rgba(242,201,76,.55); background:rgba(242,201,76,.08); }
+                    #BeeFlixProfilesPage .bf-review { border-left:3px solid var(--bf-member-tag-color, transparent); }
+                    @media(max-width:600px) { #BeeFlixProfilesPage .bf-rewards-grid { grid-template-columns:1fr; } }
+
 </style>
 
                 <main class="bf-wrap">
