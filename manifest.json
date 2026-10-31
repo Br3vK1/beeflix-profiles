@@ -8,6 +8,14 @@
     "owner": "Br3vK1",
     "versions": [
       {
+        "version": "0.8.4",
+        "changelog": "PREVIEW: Restores native Jellyfin header after a route-lifecycle regression. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.8.4-preview/BeeFlixProfiles-jellyfin12.zip",
+        "checksum": "4cd111efad939dac49b0af08dd0acb86",
+        "timestamp": "2026-10-31T02:12:38.191Z"
+      },
+      {
         "version": "0.8.3",
         "changelog": "PREVIEW: Restores native Jellyfin header after a route-lifecycle regression. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
         "targetAbi": "12.0.0.0",
@@ -78,14 +86,6 @@
         "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.7.4-preview/BeeFlixProfiles-jellyfin12.zip",
         "checksum": "b0640e88b75c092d496eb49307e489cb",
         "timestamp": "2026-10-30T20:57:29.387Z"
-      },
-      {
-        "version": "0.7.3",
-        "changelog": "PREVIEW: Adds a full-bleed cinematic profile header, integrated frosted-glass member search and stats, safer directory navigation for empty profiles, and movie/series-level rotating backdrop artwork. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
-        "targetAbi": "12.0.0.0",
-        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.7.3-preview/BeeFlixProfiles-jellyfin12.zip",
-        "checksum": "a292f1b613de67e92a8ab50517fe110b",
-        "timestamp": "2026-10-30T20:29:32.407Z"
       }
     ]
   }
