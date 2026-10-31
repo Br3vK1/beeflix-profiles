@@ -1027,6 +1027,59 @@
                         }
                     }
 
+
+                    /* 0.8.1: native Jellyfin navigation is replaced only while BeeFlix is visible. */
+                    body.bf-beeflix-page-active .skinHeader,
+                    body.bf-beeflix-page-active .skinHeader-withBackground {
+                        display: none !important;
+                    }
+                    body.bf-beeflix-page-active .skinHeader + .skinBody,
+                    body.bf-beeflix-page-active .skinBody {
+                        padding-top: 0 !important;
+                        margin-top: 0 !important;
+                    }
+                    #BeeFlixProfilesPage .bf-app-topbar {
+                        position: sticky !important;
+                        top: 0 !important;
+                        left: auto !important;
+                        right: auto !important;
+                        transform: none !important;
+                        z-index: 100000 !important;
+                        display: grid !important;
+                        grid-template-columns: minmax(100px,1fr) minmax(260px,560px) minmax(100px,1fr);
+                        align-items: center;
+                        gap: 1rem;
+                        width: 100vw !important;
+                        max-width: none !important;
+                        min-height: 58px;
+                        box-sizing: border-box;
+                        margin: 0 0 0 calc(50% - 50vw) !important;
+                        padding: .45rem clamp(.8rem, 2.5vw, 2rem);
+                        color: #fff;
+                        background: rgba(19,29,44,.30) !important;
+                        border: 0 !important;
+                        border-bottom: 1px solid rgba(255,255,255,.12) !important;
+                        border-radius: 0 !important;
+                        box-shadow: 0 5px 22px rgba(0,0,0,.08) !important;
+                        backdrop-filter: blur(28px) saturate(155%) !important;
+                        -webkit-backdrop-filter: blur(28px) saturate(155%) !important;
+                    }
+                    #BeeFlixProfilesPage .bf-app-topbar .bf-profile-searchbar {
+                        background: rgba(255,255,255,.10) !important;
+                        border-color: rgba(255,255,255,.22) !important;
+                        backdrop-filter: blur(20px) saturate(155%);
+                        -webkit-backdrop-filter: blur(20px) saturate(155%);
+                    }
+                    @media (max-width: 700px) {
+                        #BeeFlixProfilesPage .bf-app-topbar {
+                            grid-template-columns:auto minmax(0,1fr);
+                            min-height:52px;
+                            gap:.65rem;
+                            padding:.4rem .65rem;
+                        }
+                        #BeeFlixProfilesPage .bf-app-topbar-brand { display:none; }
+                    }
+
 </style>
 
                 <main class="bf-wrap">
