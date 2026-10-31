@@ -8,6 +8,14 @@
     "owner": "Br3vK1",
     "versions": [
       {
+        "version": "0.8.2",
+        "changelog": "PREVIEW: Restores native Jellyfin header after a route-lifecycle regression. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.8.2-preview/BeeFlixProfiles-jellyfin12.zip",
+        "checksum": "391c37ac7f6a91f913ccd97833141da0",
+        "timestamp": "2026-10-31T02:02:41.438Z"
+      },
+      {
         "version": "0.8.1",
         "changelog": "PREVIEW: Restores native Jellyfin header after a route-lifecycle regression. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
         "targetAbi": "12.0.0.0",
@@ -78,14 +86,6 @@
         "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.7.2-preview/BeeFlixProfiles-jellyfin12.zip",
         "checksum": "316bba15876716a5511b417c7b033316",
         "timestamp": "2026-10-30T20:00:36.371Z"
-      },
-      {
-        "version": "0.7.1",
-        "changelog": "PREVIEW: Adds a compact member profile dashboard, watched movie and unique series counts, per-member activity with Show more, review metric icons, and a compact achievements sidebar that opens the full achievements view. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
-        "targetAbi": "12.0.0.0",
-        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.7.1-preview/BeeFlixProfiles-jellyfin12.zip",
-        "checksum": "5f4c5346646570f61978cb88bc3c059a",
-        "timestamp": "2026-10-30T19:16:18.179Z"
       }
     ]
   }
