@@ -34,4 +34,3 @@ public sealed class EquippedRewardRecord
     public string UserId { get; set; } = string.Empty;
     public string RewardId { get; set; } = BeeFlix.Profiles.Services.RewardCatalog.DefaultId;
 }
-}
