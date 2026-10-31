@@ -58,13 +58,37 @@
   let activeView = 'community';
   let activityRequestSequence = 0;
 
+  document.body.classList.add('bf-beeflix-page-active');
+  const appTopbar = document.createElement('header');
+  appTopbar.className = 'bf-app-topbar';
+  appTopbar.setAttribute('aria-label', 'BeeFlix navigation');
+  const appBack = document.createElement('button');
+  appBack.type = 'button';
+  appBack.className = 'bf-app-back';
+  appBack.setAttribute('aria-label', 'Back');
+  appBack.innerHTML = '<span class="material-icons" aria-hidden="true">arrow_back</span>';
+  const appBrand = document.createElement('div');
+  appBrand.className = 'bf-app-topbar-brand';
+  appBrand.innerHTML = '<span class="material-icons" aria-hidden="true">groups</span><span>BEEFLIX</span>';
+  const appSearch = document.createElement('div');
+  appSearch.className = 'bf-profile-searchbar';
+  appSearch.setAttribute('role', 'search');
+  appTopbar.append(appBack, appSearch, appBrand);
+  pageRoot.prepend(appTopbar);
+  appBack.addEventListener('click', () => {
+    if (activeView === 'profile') showCommunity();
+    else if (activeView === 'achievements' && selectedMember) loadProfile(selectedMember, false);
+    else window.location.hash = '#/home';
+  });
+
   function setActiveView(view) {
-    activeView = view === 'profile' ? 'profile' : 'community';
-    const showProfile = activeView === 'profile';
-    pageRoot.classList.toggle('bf-view-profile', showProfile);
-    document.body.classList.toggle('bf-beeflix-profile-active', showProfile);
-    const profileSearchbar = profileContainer.querySelector('.bf-profile-searchbar');
-    const pickerHost = showProfile ? profileSearchbar : pageRoot.querySelector('.bf-directory-card');
+    activeView = ['profile', 'achievements'].includes(view) ? view : 'community';
+    const showProfile = activeView !== 'community';
+    pageRoot.classList.toggle('bf-view-profile', activeView === 'profile');
+    pageRoot.classList.toggle('bf-view-achievements', activeView === 'achievements');
+    pageRoot.classList.toggle('bf-view-community', activeView === 'community');
+    document.body.classList.toggle('bf-beeflix-profile-active', activeView === 'profile');
+    const pickerHost = appSearch;
     if (pickerHost && memberPicker && memberPicker.parentElement !== pickerHost) pickerHost.appendChild(memberPicker);
     profileContainer.hidden = !showProfile;
     feedContainer.hidden = showProfile;
@@ -679,12 +703,7 @@
     heading.className = 'bf-section-heading';
     const title = document.createElement('h2');
     title.textContent = member.userName + ' · Achievements';
-    const back = document.createElement('button');
-    back.type = 'button';
-    back.className = 'bf-inline-link';
-    back.textContent = '← Back to profile';
-    back.addEventListener('click', () => loadProfile(member, false));
-    heading.append(title, back);
+    heading.append(title);
     const summary = document.createElement('p');
     summary.className = 'bf-muted';
     summary.textContent = achievementData
@@ -728,6 +747,7 @@
     }
     page.append(heading, summary, grid);
     profileContainer.replaceChildren(page);
+    setActiveView('achievements');
     revealProfileContainer();
   }
 
@@ -764,9 +784,7 @@
     const section = document.createElement('section');
     section.className = 'bf-card bf-profile-card';
 
-    const profileSearchbar = document.createElement('div');
-    profileSearchbar.className = 'bf-profile-searchbar';
-    profileSearchbar.setAttribute('role', 'search');
+    const profileSearchbar = appSearch;
     const hero = document.createElement('div');
     hero.className = 'bf-profile-hero';
     const backdropLayer = document.createElement('div');
@@ -817,8 +835,7 @@
     releaseText.className = 'bf-profile-release-text';
     releaseText.textContent = buildLabel?.textContent || 'Build 0.7.2';
     release.append(releaseIcon, releaseText);
-    heroTopbar.append(brandLockup, profileSearchbar, release);
-    hero.appendChild(heroTopbar);
+    // Shared BeeFlix navigation lives above the page, not inside the profile hero.
 
     const heroContent = document.createElement('div');
     heroContent.className = 'bf-profile-hero-content';
@@ -1220,6 +1237,8 @@
     cleanup: () => {
       document.removeEventListener('click', onDocumentClick);
       document.removeEventListener('keydown', onDocumentKeydown);
+      document.body.classList.remove('bf-beeflix-page-active', 'bf-beeflix-profile-active');
+      appTopbar.remove();
     }
   });
 
