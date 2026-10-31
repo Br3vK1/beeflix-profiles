@@ -371,6 +371,99 @@
     return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
   }
 
+  function createRewardBadge(member, compact = false) {
+    const badge = document.createElement('span');
+    badge.className = 'bf-member-tag' + (compact ? ' is-compact' : '');
+    badge.textContent = member?.tag || 'Community Member';
+    badge.style.setProperty('--bf-member-tag-color', member?.tagColor || '#F2C94C');
+    badge.title = member?.tag || 'Community Member';
+    return badge;
+  }
+
+  async function openEditProfile(member) {
+    const existing = pageRoot.querySelector('.bf-reward-editor-backdrop');
+    if (existing) existing.remove();
+    const backdrop = document.createElement('div');
+    backdrop.className = 'bf-reward-editor-backdrop';
+    const dialog = document.createElement('section');
+    dialog.className = 'bf-reward-editor';
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    dialog.setAttribute('aria-label', 'Edit profile reward');
+    const heading = document.createElement('div');
+    heading.className = 'bf-section-heading';
+    const title = document.createElement('h2');
+    title.textContent = 'Edit Profile';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'bf-community-back';
+    close.textContent = 'Close';
+    close.addEventListener('click', () => backdrop.remove());
+    heading.append(title, close);
+    const intro = document.createElement('p');
+    intro.className = 'bf-muted';
+    intro.textContent = 'Choose any title you have unlocked. Your achievements are permanent; your displayed title can change anytime.';
+    const list = document.createElement('div');
+    list.className = 'bf-reward-choice-list';
+    const feedback = document.createElement('p');
+    feedback.className = 'bf-status';
+    feedback.setAttribute('role', 'status');
+    dialog.append(heading, intro, list, feedback);
+    backdrop.appendChild(dialog);
+    backdrop.addEventListener('click', event => { if (event.target === backdrop) backdrop.remove(); });
+    pageRoot.appendChild(backdrop);
+    list.textContent = 'Loading your rewards…';
+    try {
+      const data = await ApiClient.ajax({
+        type: 'GET',
+        url: ApiClient.getUrl('/BeeFlixProfiles/users/' + encodeURIComponent(member.userId) + '/rewards'),
+        dataType: 'json'
+      });
+      list.replaceChildren();
+      const options = [{ id: 'community-member', name: 'Community Member', color: '#F2C94C', unlocked: true, description: 'The classic BeeFlix member title.' }, ...(data.rewards || [])];
+      options.forEach(reward => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'bf-reward-choice' + (reward.equipped || data.equipped?.id === reward.id ? ' is-equipped' : '');
+        row.disabled = !reward.unlocked;
+        const badge = document.createElement('span');
+        badge.className = 'bf-member-tag';
+        badge.textContent = reward.name;
+        badge.style.setProperty('--bf-member-tag-color', reward.color || '#F2C94C');
+        const detail = document.createElement('small');
+        detail.textContent = reward.unlocked ? (reward.description || 'Unlocked reward') : 'Locked · Earn the associated achievement';
+        const state = document.createElement('span');
+        state.className = 'bf-reward-choice-state';
+        state.textContent = reward.unlocked ? ((reward.equipped || data.equipped?.id === reward.id) ? 'Equipped' : 'Equip') : 'Locked';
+        row.append(badge, detail, state);
+        row.addEventListener('click', async () => {
+          try {
+            state.textContent = 'Saving…';
+            await ApiClient.ajax({
+              type: 'PUT',
+              url: ApiClient.getUrl('/BeeFlixProfiles/users/me/reward'),
+              data: JSON.stringify({ rewardId: reward.id }),
+              contentType: 'application/json',
+              dataType: 'json'
+            });
+            member.tag = reward.name;
+            member.tagColor = reward.color || '#F2C94C';
+            feedback.textContent = 'Profile title updated.';
+            backdrop.remove();
+            loadProfile(member, false);
+          } catch (error) {
+            state.textContent = 'Try again';
+            feedback.textContent = 'Could not equip that title. It may no longer be unlocked.';
+            feedback.classList.add('bf-error');
+          }
+        });
+        list.appendChild(row);
+      });
+    } catch (error) {
+      list.textContent = 'Could not load your rewards. Check the plugin status and try again.';
+    }
+  }
+
   function buildReviewCard(review) {
     const article = document.createElement('article');
     article.className = 'bf-review';
@@ -546,7 +639,7 @@
       title.removeAttribute('href');
     }
 
-    headline.append(author, verb, title);
+    headline.append(author, createRewardBadge(member, true), verb, title);
     body.appendChild(headline);
 
     if (type === 'Reviewed' && entry.Rating != null) {
@@ -785,7 +878,40 @@
       empty.textContent = achievementData ? 'No achievements are available yet.' : 'Achievement data could not be loaded.';
       grid.appendChild(empty);
     }
-    page.append(heading, summary, grid);
+    const rewardsSection = document.createElement('section');
+    rewardsSection.className = 'bf-rewards-section';
+    const rewardsHeading = document.createElement('div');
+    rewardsHeading.className = 'bf-section-heading';
+    const rewardsTitle = document.createElement('h2');
+    rewardsTitle.textContent = 'Rewards';
+    rewardsHeading.appendChild(rewardsTitle);
+    const rewardsGrid = document.createElement('div');
+    rewardsGrid.className = 'bf-rewards-grid';
+    const rewardsLoading = document.createElement('p');
+    rewardsLoading.className = 'bf-muted';
+    rewardsLoading.textContent = 'Loading reward titles…';
+    rewardsGrid.appendChild(rewardsLoading);
+    rewardsSection.append(rewardsHeading, rewardsGrid);
+    page.append(heading, summary, grid, rewardsSection);
+    ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('/BeeFlixProfiles/users/' + encodeURIComponent(member.userId) + '/rewards'), dataType: 'json' })
+      .then(data => {
+        rewardsGrid.replaceChildren();
+        (data.rewards || []).forEach(reward => {
+          const card = document.createElement('article');
+          card.className = 'bf-reward-card' + (reward.unlocked ? ' is-unlocked' : ' is-locked');
+          const badge = document.createElement('span');
+          badge.className = 'bf-member-tag';
+          badge.textContent = reward.name;
+          badge.style.setProperty('--bf-member-tag-color', reward.color || '#F2C94C');
+          const detail = document.createElement('p');
+          detail.textContent = reward.unlocked ? (reward.description || 'Unlocked') : 'Unlock by earning: ' + (achievements.find(item => item.id === reward.achievementId)?.name || 'the associated achievement');
+          const statusLabel = document.createElement('small');
+          statusLabel.textContent = reward.unlocked ? (reward.equipped ? 'Currently equipped' : 'Unlocked') : 'Locked';
+          card.append(badge, detail, statusLabel);
+          rewardsGrid.appendChild(card);
+        });
+      })
+      .catch(() => { rewardsGrid.textContent = 'Reward information is currently unavailable.'; });
     profileContainer.replaceChildren(page);
     revealProfileContainer();
     setActiveView('achievements');
@@ -912,10 +1038,10 @@
     const name = document.createElement('h2');
     name.className = 'bf-profile-name';
     name.textContent = member.userName;
-    const subtitle = document.createElement('p');
-    subtitle.className = 'bf-muted';
-    subtitle.textContent = 'BeeFlix community member';
-    identity.append(name, subtitle);
+    const identityMeta = document.createElement('div');
+    identityMeta.className = 'bf-profile-identity-meta';
+    identityMeta.appendChild(createRewardBadge(member));
+    identity.append(name, identityMeta);
     header.append(avatar, identity);
 
     const actions = document.createElement('div');
@@ -926,6 +1052,15 @@
     share.textContent = 'Share profile link';
     share.addEventListener('click', () => copyText(profileUrl(member)));
     actions.appendChild(share);
+    const currentUserId = typeof ApiClient.getCurrentUserId === 'function' ? ApiClient.getCurrentUserId() : '';
+    if (normalizeId(currentUserId) === normalizeId(member.userId)) {
+      const edit = document.createElement('button');
+      edit.type = 'button';
+      edit.className = 'bf-community-back bf-edit-profile-button';
+      edit.textContent = 'Edit Profile';
+      edit.addEventListener('click', () => openEditProfile(member));
+      actions.prepend(edit);
+    }
     heroContent.append(header, actions);
     hero.appendChild(heroContent);
     section.appendChild(hero);
@@ -1224,7 +1359,7 @@
       const source = Array.isArray(data.members) ? data.members : [];
       members = source
         .filter(member => member && typeof member.userId === 'string' && typeof member.userName === 'string')
-        .map(member => ({ userId: member.userId, userName: member.userName }))
+        .map(member => ({ userId: member.userId, userName: member.userName, tag: member.tag || 'Community Member', tagColor: member.tagColor || '#F2C94C', tagId: member.tagId || 'community-member' }))
         .sort((a, b) => a.userName.localeCompare(b.userName, undefined, { sensitivity: 'base' }));
 
       renderMemberList('');
