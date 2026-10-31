@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   publish-preview:
-    # Build, package, and catalog publication happen only after this exact gated commit. 0.8.4 preview gate: keep toolbar inside scoped BeeFlix root so profile picker styles apply.
+    # Build, package, and catalog publication happen only after this exact gated commit. 0.8.4 preview gate: publish corrected toolbar DOM placement.
     # This gate prevents normal feature pushes from publishing a release.
     if: ${{ github.event.head_commit.message == 'Publish 0.8.4 preview from CI' }}
     runs-on: ubuntu-latest
