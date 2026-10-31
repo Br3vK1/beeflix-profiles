@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   publish-preview:
-    # Build, package, and catalog publication happen only after this exact gated commit. 0.8.3 preview gate: remove Jellyfin skinBody's reserved header offset while BeeFlix is active.
+    # Build, package, and catalog publication happen only after this exact gated commit. 0.8.3 preview gate: use fixed safe-area-aware glass toolbar for reliable iOS Safari pinning.
     # This gate prevents normal feature pushes from publishing a release.
     if: ${{ github.event.head_commit.message == 'Publish 0.8.3 preview from CI' }}
     runs-on: ubuntu-latest
