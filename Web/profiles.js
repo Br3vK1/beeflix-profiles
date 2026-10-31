@@ -58,7 +58,6 @@
   let activeView = 'community';
   let activityRequestSequence = 0;
 
-  document.body.classList.add('bf-beeflix-page-active');
   const appTopbar = document.createElement('header');
   appTopbar.className = 'bf-app-topbar';
   appTopbar.setAttribute('aria-label', 'BeeFlix navigation');
@@ -75,6 +74,31 @@
   appSearch.setAttribute('role', 'search');
   appTopbar.append(appBack, appSearch, appBrand);
   document.body.appendChild(appTopbar);
+
+  // Jellyfin is an SPA: plugin DOM can remain mounted after navigating away.
+  // Scope the custom header and default-header suppression to the visible BeeFlix page.
+  let pageVisibilityObserver = null;
+  let pageIsActive = false;
+  function syncBeeFlixPageVisibility() {
+    const visible = pageRoot.isConnected &&
+      pageRoot.getClientRects().length > 0 &&
+      getComputedStyle(pageRoot).visibility !== 'hidden' &&
+      !pageRoot.closest('[hidden]') &&
+      getComputedStyle(pageRoot).display !== 'none';
+    pageIsActive = visible;
+    document.body.classList.toggle('bf-beeflix-page-active', visible);
+    appTopbar.style.display = visible ? 'grid' : 'none';
+  }
+  pageVisibilityObserver = new MutationObserver(syncBeeFlixPageVisibility);
+  pageVisibilityObserver.observe(document.body, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ['class', 'style', 'hidden', 'aria-hidden']
+  });
+  window.addEventListener('hashchange', syncBeeFlixPageVisibility);
+  syncBeeFlixPageVisibility();
+
   appBack.addEventListener('click', () => {
     if (activeView === 'profile') showCommunity();
     else if (activeView === 'achievements' && selectedMember) loadProfile(selectedMember, false);
@@ -1250,6 +1274,8 @@
     cleanup: () => {
       document.removeEventListener('click', onDocumentClick);
       document.removeEventListener('keydown', onDocumentKeydown);
+      pageVisibilityObserver?.disconnect();
+      window.removeEventListener('hashchange', syncBeeFlixPageVisibility);
       document.body.classList.remove('bf-beeflix-page-active', 'bf-beeflix-profile-active');
       appTopbar.remove();
     }
