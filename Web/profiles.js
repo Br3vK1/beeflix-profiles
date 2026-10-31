@@ -74,7 +74,7 @@
   appSearch.className = 'bf-profile-searchbar';
   appSearch.setAttribute('role', 'search');
   appTopbar.append(appBack, appSearch, appBrand);
-  pageRoot.prepend(appTopbar);
+  document.body.appendChild(appTopbar);
   appBack.addEventListener('click', () => {
     if (activeView === 'profile') showCommunity();
     else if (activeView === 'achievements' && selectedMember) loadProfile(selectedMember, false);
@@ -751,13 +751,27 @@
     setActiveView('achievements');
   }
 
-  async function resolveHeroBackdropIds(profileActivity, reviews) {
-    const candidates = [
+  async function resolveHeroBackdropIds(member, profileActivity, reviews) {
+    const ids = [
       ...profileActivity.map(entry => entry.Item?.Id || ''),
       ...reviews.map(review => review.jellyfinItemId || '')
-    ].filter((id, index, all) => /^[0-9a-f]{32}$/i.test(String(id)) && all.indexOf(id) === index);
-    // Shuffle the full available watch/review pool so repeat profile visits don't
-    // always showcase the same first few titles.
+    ];
+    // Pull a much wider sample of this member's actually played library items.
+    // The activity feed is event-limited and can otherwise over-represent a few
+    // recently watched series.
+    try {
+      const library = await ApiClient.ajax({
+        type: 'GET',
+        url: ApiClient.getUrl('/Users/' + encodeURIComponent(member.userId) +
+          '/Items?Recursive=true&IncludeItemTypes=Movie,Series&Filters=IsPlayed&SortBy=DatePlayed&SortOrder=Descending&Limit=120&Fields=DatePlayed'),
+        dataType: 'json'
+      });
+      (library.Items || []).forEach(item => ids.push(item.Id || ''));
+    } catch (error) {
+      console.debug('[BeeFlix Profiles] Played-library artwork pool unavailable; using activity and review history:', error);
+    }
+    const candidates = [...new Set(ids.filter(id => /^[0-9a-f]{32}$/i.test(String(id))))];
+    // Shuffle the complete candidate pool on every profile enrichment.
     for (let i = candidates.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
@@ -1124,7 +1138,7 @@
             .sort((a, b) => Number(b.Timestamp || b.timestamp || 0) - Number(a.Timestamp || a.timestamp || 0))
             .slice(0, 50);
           profileState = { ...profileState, activity: profileActivity };
-          const heroBackdropIds = await resolveHeroBackdropIds(profileActivity, combinedReviews);
+          const heroBackdropIds = await resolveHeroBackdropIds(member, profileActivity, combinedReviews);
           if (requestId !== profileRequestSequence) return;
           renderProfile(member, stats, combinedReviews, total, false, achievementData, profileActivity, heroBackdropIds);
           status.textContent = `Showing ${combinedReviews.length} of ${total} visible reviews for ${member.userName}.`;
@@ -1132,7 +1146,7 @@
           console.warn('[BeeFlix Profiles] Deferred profile enrichment failed:', error);
         });
       } else {
-        const heroBackdropIds = await resolveHeroBackdropIds(cachedActivity, combinedReviews).catch(error => {
+        const heroBackdropIds = await resolveHeroBackdropIds(member, cachedActivity, combinedReviews).catch(error => {
           console.warn('[BeeFlix Profiles] Hero artwork unavailable:', error);
           return [];
         });
