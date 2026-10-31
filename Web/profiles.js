@@ -747,8 +747,8 @@
     }
     page.append(heading, summary, grid);
     profileContainer.replaceChildren(page);
-    setActiveView('achievements');
     revealProfileContainer();
+    setActiveView('achievements');
   }
 
   async function resolveHeroBackdropIds(profileActivity, reviews) {
