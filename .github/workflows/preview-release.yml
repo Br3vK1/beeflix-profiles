@@ -10,7 +10,7 @@ permissions:
 jobs:
   publish-preview:
     # Publishing is intentionally gated to one explicit commit message.
-    if: ${{ github.event.head_commit.message == 'Fix Jellyfin numeric preview version' }}
+    if: ${{ github.event.head_commit.message == 'Publish 1.0.0 reward-accent preview' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out tested source
