@@ -957,6 +957,76 @@
                         }
                     }
 
+
+                    /* 0.8.0: keep Jellyfin's native top navigation and place a BeeFlix glass toolbar directly below it. */
+                    #BeeFlixProfilesPage .bf-app-topbar {
+                        position: relative !important;
+                        top: auto !important; left: auto !important; right: auto !important;
+                        transform: none !important;
+                        display: grid !important;
+                        grid-template-columns: minmax(100px,1fr) minmax(260px,560px) minmax(100px,1fr);
+                        align-items: center;
+                        gap: 1rem;
+                        width: 100vw !important;
+                        max-width: none !important;
+                        min-height: 58px;
+                        box-sizing: border-box;
+                        margin: 0 0 0 calc(50% - 50vw) !important;
+                        padding: .45rem clamp(.8rem, 2.5vw, 2rem);
+                        background: linear-gradient(100deg, rgba(15,22,35,.58), rgba(28,39,56,.38)) !important;
+                        border: 0 !important;
+                        border-bottom: 1px solid rgba(255,255,255,.10) !important;
+                        border-radius: 0 !important;
+                        box-shadow: none !important;
+                        backdrop-filter: blur(22px) saturate(145%);
+                        -webkit-backdrop-filter: blur(22px) saturate(145%);
+                    }
+                    #BeeFlixProfilesPage .bf-app-topbar .bf-app-back { justify-self:start; }
+                    #BeeFlixProfilesPage .bf-app-topbar-brand { justify-self:end; }
+                    #BeeFlixProfilesPage .bf-app-topbar .bf-profile-searchbar {
+                        justify-self:center;
+                        width:100%; max-width:560px; min-width:0;
+                        min-height:38px; margin:0; padding:.1rem .55rem .1rem .8rem;
+                        border-radius:999px;
+                        border:1px solid rgba(255,255,255,.19);
+                        background:rgba(255,255,255,.075);
+                        box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 4px 14px rgba(0,0,0,.10);
+                        backdrop-filter:blur(18px) saturate(145%);
+                        -webkit-backdrop-filter:blur(18px) saturate(145%);
+                    }
+                    #BeeFlixProfilesPage .bf-app-topbar .bf-member-picker {
+                        width:100%; max-width:none; min-width:0;
+                    }
+                    #BeeFlixProfilesPage .bf-app-topbar .bf-picker-toggle {
+                        width:100%; min-height:34px; padding:.1rem .25rem;
+                        border:0; border-radius:999px; background:transparent; box-shadow:none;
+                    }
+                    #BeeFlixProfilesPage .bf-app-topbar .bf-picker-toggle .bf-member-avatar {
+                        width:26px; height:26px; flex-basis:26px;
+                    }
+                    #BeeFlixProfilesPage .bf-app-topbar .bf-picker-toggle:hover { background:rgba(255,255,255,.06); }
+                    @media (max-width: 700px) {
+                        #BeeFlixProfilesPage .bf-app-topbar {
+                            grid-template-columns:auto minmax(0,1fr);
+                            min-height:52px; gap:.65rem; padding:.4rem .65rem;
+                        }
+                        #BeeFlixProfilesPage .bf-app-topbar-brand { display:none; }
+                        #BeeFlixProfilesPage .bf-app-topbar .bf-app-back {
+                            min-width:74px; height:36px; padding:0 .65rem;
+                        }
+                        #BeeFlixProfilesPage .bf-app-topbar .bf-profile-searchbar {
+                            min-height:34px; padding:.05rem .4rem .05rem .65rem;
+                        }
+                        #BeeFlixProfilesPage .bf-app-topbar .bf-picker-toggle {
+                            min-height:30px; font-size:.9rem;
+                        }
+                    }
+                    @media (min-width: 701px) {
+                        #BeeFlixProfilesPage.bf-view-profile .bf-profile-hero {
+                            min-height:calc(100vh - 132px);
+                        }
+                    }
+
 </style>
 
                 <main class="bf-wrap">
