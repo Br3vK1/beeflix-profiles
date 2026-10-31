@@ -76,7 +76,7 @@
   const appTopbarSpacer = document.createElement('div');
   appTopbarSpacer.className = 'bf-app-topbar-spacer';
   pageRoot.prepend(appTopbarSpacer);
-  document.body.appendChild(appTopbar);
+  pageRoot.appendChild(appTopbar);
 
   // Jellyfin is an SPA and can retain hidden plugin pages in the DOM.
   // Hide its native header only while this BeeFlix page is genuinely visible.
