@@ -114,10 +114,17 @@ public sealed class ProfilesController : ControllerBase
             var members = _users.GetUsers()
                 .Where(user => user is not null)
                 .Where(user => isAdmin || user.Id == viewerId || !IsHiddenOrDisabled(user))
-                .Select(user => new
+                .Select(user =>
                 {
-                    userId = user.Id.ToString("N"),
-                    userName = user.Username
+                    var equipped = GetEquippedReward(user.Id);
+                    return new
+                    {
+                        userId = user.Id.ToString("N"),
+                        userName = user.Username,
+                        tag = equipped.Name,
+                        tagColor = equipped.Color,
+                        tagId = equipped.Id
+                    };
                 })
                 .OrderBy(user => user.userName, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
@@ -209,6 +216,128 @@ public sealed class ProfilesController : ControllerBase
             _logger.LogError(ex, "Failed to calculate BeeFlix achievements for profile {UserId}", targetId);
             return StatusCode(503, new { message = "Could not calculate achievements. Check the Jellyfin server logs." });
         }
+    }
+
+    [HttpGet("users/{userId}/rewards")]
+    public IActionResult GetUserRewards(string userId)
+    {
+        if (Plugin.Instance is null || !Plugin.Instance.Configuration.Enabled) return NotFound();
+        if (!Guid.TryParse(userId, out var targetId)) return BadRequest(new { message = "Invalid user id." });
+        var viewerId = GetViewerId();
+        if (viewerId == Guid.Empty) return Unauthorized();
+        var viewer = _users.GetUserById(viewerId);
+        var target = _users.GetUserById(targetId);
+        if (viewer is null) return Unauthorized();
+        var isAdmin = SafelyHasPermission(viewer, "IsAdministrator");
+        if (target is null || (!isAdmin && targetId != viewerId && IsHiddenOrDisabled(target))) return NotFound();
+
+        try
+        {
+            var achievements = _achievements.GetAchievements(target);
+            var unlockedIds = Plugin.Instance.Configuration.AchievementUnlocks
+                .Where(item => string.Equals(item.UserId, targetId.ToString("N"), StringComparison.OrdinalIgnoreCase))
+                .Select(item => item.AchievementId)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var equipped = GetEquippedReward(targetId);
+            var rewards = RewardCatalog.All.Select(reward => new
+            {
+                id = reward.Id,
+                achievementId = reward.AchievementId,
+                name = reward.Name,
+                description = reward.Description,
+                color = reward.Color,
+                category = reward.Category,
+                unlocked = unlockedIds.Contains(reward.AchievementId),
+                equipped = string.Equals(equipped.Id, reward.Id, StringComparison.OrdinalIgnoreCase)
+            }).ToArray();
+            return Ok(new
+            {
+                userId = targetId.ToString("N"),
+                equipped = new { id = equipped.Id, name = equipped.Name, color = equipped.Color },
+                defaultReward = new { id = RewardCatalog.DefaultId, name = "Community Member", color = "#F2C94C" },
+                rewards
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load BeeFlix rewards for {UserId}", targetId);
+            return StatusCode(503, new { message = "Could not load member rewards." });
+        }
+    }
+
+    [HttpPut("users/me/reward")]
+    public IActionResult EquipReward([FromBody] EquipRewardRequest request)
+    {
+        if (Plugin.Instance is null || !Plugin.Instance.Configuration.Enabled) return NotFound();
+        var viewerId = GetViewerId();
+        if (viewerId == Guid.Empty) return Unauthorized();
+        var viewer = _users.GetUserById(viewerId);
+        if (viewer is null) return Unauthorized();
+
+        var reward = RewardCatalog.Find(request?.RewardId);
+        if (reward is null) return BadRequest(new { message = "Unknown BeeFlix reward." });
+
+        try
+        {
+            _achievements.GetAchievements(viewer);
+            var configuration = Plugin.Instance.Configuration;
+            configuration.EquippedRewards ??= [];
+            if (reward.Id != RewardCatalog.DefaultId)
+            {
+                var unlocked = configuration.AchievementUnlocks.Any(item =>
+                    string.Equals(item.UserId, viewerId.ToString("N"), StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(item.AchievementId, reward.AchievementId, StringComparison.OrdinalIgnoreCase));
+                if (!unlocked) return Conflict(new { message = "That reward has not been unlocked yet." });
+            }
+
+            var record = configuration.EquippedRewards.FirstOrDefault(item =>
+                string.Equals(item.UserId, viewerId.ToString("N"), StringComparison.OrdinalIgnoreCase));
+            if (record is null)
+            {
+                configuration.EquippedRewards.Add(new EquippedRewardRecord { UserId = viewerId.ToString("N"), RewardId = reward.Id });
+            }
+            else
+            {
+                record.RewardId = reward.Id;
+            }
+            Plugin.Instance.UpdateConfiguration(configuration);
+            return Ok(new { equipped = new { id = reward.Id, name = reward.Name, color = reward.Color } });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to equip BeeFlix reward for {UserId}", viewerId);
+            return StatusCode(503, new { message = "Could not update your profile reward." });
+        }
+    }
+
+    [HttpGet("users/{userId}/identity")]
+    public IActionResult GetMemberIdentity(string userId)
+    {
+        if (Plugin.Instance is null || !Plugin.Instance.Configuration.Enabled) return NotFound();
+        if (!Guid.TryParse(userId, out var targetId)) return BadRequest(new { message = "Invalid user id." });
+        var viewerId = GetViewerId();
+        if (viewerId == Guid.Empty) return Unauthorized();
+        var viewer = _users.GetUserById(viewerId);
+        var target = _users.GetUserById(targetId);
+        if (viewer is null) return Unauthorized();
+        var isAdmin = SafelyHasPermission(viewer, "IsAdministrator");
+        if (target is null || (!isAdmin && targetId != viewerId && IsHiddenOrDisabled(target))) return NotFound();
+        var reward = GetEquippedReward(targetId);
+        return Ok(new { userId = targetId.ToString("N"), userName = target.Username, tag = reward.Name, tagId = reward.Id, tagColor = reward.Color });
+    }
+
+    private RewardDefinition GetEquippedReward(Guid userId)
+    {
+        var records = Plugin.Instance?.Configuration.EquippedRewards ?? [];
+        var rewardId = records.FirstOrDefault(item =>
+            string.Equals(item.UserId, userId.ToString("N"), StringComparison.OrdinalIgnoreCase))?.RewardId
+            ?? RewardCatalog.DefaultId;
+        return RewardCatalog.Find(rewardId) ?? RewardCatalog.Find(RewardCatalog.DefaultId)!;
+    }
+
+    public sealed class EquipRewardRequest
+    {
+        public string RewardId { get; set; } = RewardCatalog.DefaultId;
     }
 
     [HttpGet("users/{userId}/reviews")]
