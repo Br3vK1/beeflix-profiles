@@ -20,6 +20,8 @@ jobs:
         run: node --check Web/profiles.js
       - name: Check profile loader JavaScript syntax
         run: node --check Web/profiles-loader.js
+      - name: Check Enhanced identity integration JavaScript syntax
+        run: node --check Web/enhanced-identity.js
       - name: Restore
         run: dotnet restore BeeFlix.Profiles.csproj
       - name: Build
