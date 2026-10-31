@@ -8,6 +8,14 @@
     "owner": "Br3vK1",
     "versions": [
       {
+        "version": "0.8.0",
+        "changelog": "PREVIEW: Restores native Jellyfin header after a route-lifecycle regression. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.8.0-preview/BeeFlixProfiles-jellyfin12.zip",
+        "checksum": "5961b5c30e007e58e406ebecc61adb12",
+        "timestamp": "2026-10-31T01:50:00.054Z"
+      },
+      {
         "version": "0.7.9",
         "changelog": "PREVIEW: Restores native Jellyfin header after a route-lifecycle regression. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
         "targetAbi": "12.0.0.0",
@@ -78,14 +86,6 @@
         "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.7.0-preview/BeeFlixProfiles-jellyfin12.zip",
         "checksum": "3bba74c5ed5313fe863c64f6234c5f76",
         "timestamp": "2026-10-30T19:14:25.151Z"
-      },
-      {
-        "version": "0.6.0.5",
-        "changelog": "PREVIEW: Fixes Community/profile navigation state and duplicate page-script initialization while retaining the activity timeline and achievements. Requires compatible Plugin Pages and File Transformation. Live server testing is still needed.",
-        "targetAbi": "12.0.0.0",
-        "sourceUrl": "https://github.com/Br3vK1/beeflix-profiles/releases/download/v0.6.0.5-preview/BeeFlixProfiles-jellyfin12.zip",
-        "checksum": "fe2afab9b806b1262882727f1741822f",
-        "timestamp": "2026-10-30T18:03:06.360Z"
       }
     ]
   }
