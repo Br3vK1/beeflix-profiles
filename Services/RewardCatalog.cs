@@ -27,15 +27,22 @@ public static class RewardCatalog
         new("tv-ultimate-binger", "Prime-Time Legend", "The ultimate champion of the small screen.", "#E5C35D", "tv")
     ];
 
-    public static IReadOnlyList<RewardDefinition> All => Definitions;
+    public static IReadOnlyList<RewardDefinition> All => Plugin.Instance?.Configuration.AchievementDefinitions?
+        .Where(item => item.Enabled && !string.IsNullOrWhiteSpace(item.Id) && !string.IsNullOrWhiteSpace(item.BadgeName))
+        .Select(item => new RewardDefinition(item.Id, item.BadgeName, item.BadgeDescription, item.BadgeColor, item.Metric))
+        .ToArray() ?? Definitions;
+
+    public static RewardDefinition DefaultForAchievement(string achievementId) =>
+        Definitions.FirstOrDefault(item => string.Equals(item.AchievementId, achievementId, StringComparison.OrdinalIgnoreCase))
+        ?? new RewardDefinition(achievementId, "Community Badge", "A BeeFlix achievement reward.", "#E5C35D", "community");
 
     public static RewardDefinition? ForAchievement(string? achievementId) =>
-        Definitions.FirstOrDefault(item => string.Equals(item.AchievementId, achievementId, StringComparison.OrdinalIgnoreCase));
+        All.FirstOrDefault(item => string.Equals(item.AchievementId, achievementId, StringComparison.OrdinalIgnoreCase));
 
     public static RewardDefinition? Find(string? rewardId) =>
         string.Equals(rewardId, DefaultId, StringComparison.OrdinalIgnoreCase)
             ? new RewardDefinition(DefaultId, "Community Member", "A member of the BeeFlix community.", "#F2C94C", "default")
-            : Definitions.FirstOrDefault(item => string.Equals(item.Id, rewardId, StringComparison.OrdinalIgnoreCase));
+            : All.FirstOrDefault(item => string.Equals(item.Id, rewardId, StringComparison.OrdinalIgnoreCase));
 }
 
 public sealed record RewardDefinition(
