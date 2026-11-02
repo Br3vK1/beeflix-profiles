@@ -126,8 +126,9 @@ public sealed class AchievementService
             var userId = user.Id.ToString("N");
             var previouslyInitialized = configuration.AchievementInitializedUsers.Contains(userId, StringComparer.OrdinalIgnoreCase);
 
-            var allMilestones = MovieMilestones.Select(definition => (Definition: definition, Count: movieCount))
-                .Concat(SeriesMilestones.Select(definition => (Definition: definition, Count: completedSeriesCount)));
+            var definitions = GetConfiguredDefinitions(configuration);
+            var allMilestones = definitions.Where(definition => definition.Enabled)
+                .Select(definition => (Definition: definition, Count: string.Equals(definition.Metric, "series", StringComparison.OrdinalIgnoreCase) ? completedSeriesCount : movieCount));
 
             foreach (var milestone in allMilestones)
             {
@@ -156,11 +157,9 @@ public sealed class AchievementService
                 changed = true;
             }
 
-            var achievementRows = MovieMilestones.Select(definition => BuildAchievementRow(
-                    definition, movieCount, configuration.AchievementUnlocks, userId))
-                .Concat(SeriesMilestones.Select(definition => BuildAchievementRow(
-                    definition, completedSeriesCount, configuration.AchievementUnlocks, userId)))
-                .ToArray();
+            var achievementRows = definitions.Select(definition => BuildAchievementRow(
+                    definition, string.Equals(definition.Metric, "series", StringComparison.OrdinalIgnoreCase) ? completedSeriesCount : movieCount,
+                    configuration.AchievementUnlocks, userId)).ToArray();
 
             if (changed) plugin.UpdateConfiguration(configuration);
 
@@ -168,11 +167,55 @@ public sealed class AchievementService
         }
     }
 
+    public static List<AchievementDefinitionConfig> GetDefaultDefinitions() =>
+        MovieMilestones.Select(item => new AchievementDefinitionConfig
+        {
+            Id = item.Id, Name = item.Name, Description = item.Description, Category = item.Category,
+            Metric = "movies", Threshold = item.Threshold, Enabled = true, Rarity = RarityFor(item.Threshold, "movies"),
+            BadgeName = RewardCatalog.DefaultForAchievement(item.Id).Name,
+            BadgeDescription = RewardCatalog.DefaultForAchievement(item.Id).Description,
+            BadgeColor = RewardCatalog.DefaultForAchievement(item.Id).Color
+        }).Concat(SeriesMilestones.Select(item => new AchievementDefinitionConfig
+        {
+            Id = item.Id, Name = item.Name, Description = item.Description, Category = item.Category,
+            Metric = "series", Threshold = item.Threshold, Enabled = true, Rarity = RarityFor(item.Threshold, "series"),
+            BadgeName = RewardCatalog.DefaultForAchievement(item.Id).Name,
+            BadgeDescription = RewardCatalog.DefaultForAchievement(item.Id).Description,
+            BadgeColor = RewardCatalog.DefaultForAchievement(item.Id).Color
+        })).ToList();
+
+    private static string RarityFor(int threshold, string metric) =>
+        threshold >= (metric == "movies" ? 1000 : 100) ? "Legendary" :
+        threshold >= (metric == "movies" ? 250 : 25) ? "Epic" :
+        threshold >= (metric == "movies" ? 50 : 10) ? "Rare" : "Common";
+
+    private static List<AchievementDefinitionConfig> GetConfiguredDefinitions(PluginConfiguration configuration)
+    {
+        configuration.AchievementDefinitions ??= [];
+        var defaults = GetDefaultDefinitions();
+        var configured = configuration.AchievementDefinitions;
+        foreach (var item in defaults)
+        {
+            var saved = configured.FirstOrDefault(x => string.Equals(x.Id, item.Id, StringComparison.OrdinalIgnoreCase));
+            if (saved is not null) CopyDefinition(saved, item);
+        }
+        return defaults.Concat(configured.Where(x => !defaults.Any(d => string.Equals(d.Id, x.Id, StringComparison.OrdinalIgnoreCase))))
+            .Where(x => !string.IsNullOrWhiteSpace(x.Id)).ToList();
+    }
+
+    private static void CopyDefinition(AchievementDefinitionConfig source, AchievementDefinitionConfig target)
+    {
+        target.Name = source.Name; target.Description = source.Description; target.Category = source.Category;
+        target.Metric = source.Metric; target.Threshold = source.Threshold; target.Enabled = source.Enabled;
+        target.Rarity = source.Rarity; target.BadgeName = source.BadgeName;
+        target.BadgeDescription = source.BadgeDescription; target.BadgeColor = source.BadgeColor;
+    }
+
     public static string? GetAchievementName(string achievementId)
     {
-        return MovieMilestones.Concat(SeriesMilestones)
-            .FirstOrDefault(definition => string.Equals(definition.Id, achievementId, StringComparison.OrdinalIgnoreCase))
-            ?.Name;
+        var config = Plugin.Instance?.Configuration;
+        return config is null ? null : GetConfiguredDefinitions(config)
+            .FirstOrDefault(item => string.Equals(item.Id, achievementId, StringComparison.OrdinalIgnoreCase))?.Name;
     }
 
     private int CountWatchedMovies(User user)
@@ -345,7 +388,7 @@ public sealed class AchievementService
     }
 
     private static object BuildAchievementRow(
-        AchievementDefinition definition,
+        AchievementDefinitionConfig definition,
         int currentCount,
         IReadOnlyCollection<AchievementUnlockRecord> unlocks,
         string userId)
@@ -362,7 +405,9 @@ public sealed class AchievementService
             category = definition.Category,
             threshold = definition.Threshold,
             currentCount,
-            progress = Math.Clamp((double)currentCount / definition.Threshold, 0d, 1d),
+            progress = Math.Clamp((double)currentCount / Math.Max(1, definition.Threshold), 0d, 1d),
+            rarity = definition.Rarity,
+            enabled = definition.Enabled,
             unlocked = unlock is not null,
             unlockedAt = unlock?.UnlockedAt,
             retroactive = unlock?.Retroactive ?? false
