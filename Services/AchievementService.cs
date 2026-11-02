@@ -157,7 +157,7 @@ public sealed class AchievementService
                 changed = true;
             }
 
-            var achievementRows = definitions.Select(definition => BuildAchievementRow(
+            var achievementRows = definitions.Where(definition => definition.Enabled).Select(definition => BuildAchievementRow(
                     definition, string.Equals(definition.Metric, "series", StringComparison.OrdinalIgnoreCase) ? completedSeriesCount : movieCount,
                     configuration.AchievementUnlocks, userId)).ToArray();
 
