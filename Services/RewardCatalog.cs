@@ -28,7 +28,7 @@ public static class RewardCatalog
     ];
 
     public static IReadOnlyList<RewardDefinition> All => Plugin.Instance?.Configuration.AchievementDefinitions?
-        .Where(item => item.Enabled && !string.IsNullOrWhiteSpace(item.Id) && !string.IsNullOrWhiteSpace(item.BadgeName))
+        .Where(item => !string.IsNullOrWhiteSpace(item.Id) && !string.IsNullOrWhiteSpace(item.BadgeName))
         .Select(item => new RewardDefinition(item.Id, item.BadgeName, item.BadgeDescription, item.BadgeColor, item.Metric))
         .ToArray() ?? Definitions;
 
