@@ -15,7 +15,8 @@ public sealed class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     public IEnumerable<PluginPageInfo> GetPages() => new[]
     {
         new PluginPageInfo { Name = "beeflix-profiles", DisplayName = "BeeFlix Community", EmbeddedResourcePath = "BeeFlix.Profiles.Web.profiles.html", EnableInMainMenu = false },
-        new PluginPageInfo { Name = "beeflix-profiles.js", EmbeddedResourcePath = "BeeFlix.Profiles.Web.profiles.js" }
+        new PluginPageInfo { Name = "beeflix-profiles.js", EmbeddedResourcePath = "BeeFlix.Profiles.Web.profiles.js" },
+        new PluginPageInfo { Name = "beeflix-profiles-settings", DisplayName = "BeeFlix Profiles", EmbeddedResourcePath = "BeeFlix.Profiles.Web.admin.html" }
     };
 }
 
@@ -27,10 +28,26 @@ public sealed class PluginConfiguration : BasePluginConfiguration
     public List<AchievementUnlockRecord> AchievementUnlocks { get; set; } = [];
     public List<string> AchievementInitializedUsers { get; set; } = [];
     public List<EquippedRewardRecord> EquippedRewards { get; set; } = [];
+    public List<AchievementDefinitionConfig> AchievementDefinitions { get; set; } = AchievementService.GetDefaultDefinitions();
 }
 
 public sealed class EquippedRewardRecord
 {
     public string UserId { get; set; } = string.Empty;
     public string RewardId { get; set; } = BeeFlix.Profiles.Services.RewardCatalog.DefaultId;
+}
+
+public sealed class AchievementDefinitionConfig
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string Category { get; set; } = "Community";
+    public string Metric { get; set; } = "movies";
+    public int Threshold { get; set; } = 1;
+    public bool Enabled { get; set; } = true;
+    public string Rarity { get; set; } = "Common";
+    public string BadgeName { get; set; } = string.Empty;
+    public string BadgeDescription { get; set; } = string.Empty;
+    public string BadgeColor { get; set; } = "#E5C35D";
 }
