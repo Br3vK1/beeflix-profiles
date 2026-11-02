@@ -16,7 +16,7 @@ public sealed class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
         new PluginPageInfo { Name = "beeflix-profiles", DisplayName = "BeeFlix Community", EmbeddedResourcePath = "BeeFlix.Profiles.Web.profiles.html", EnableInMainMenu = false },
         new PluginPageInfo { Name = "beeflix-profiles.js", EmbeddedResourcePath = "BeeFlix.Profiles.Web.profiles.js" },
-        new PluginPageInfo { Name = "beeflix-profiles-settings", DisplayName = "BeeFlix Profiles", EmbeddedResourcePath = "BeeFlix.Profiles.Web.admin.html" }
+        new PluginPageInfo { Name = Name, EmbeddedResourcePath = "BeeFlix.Profiles.Web.admin.html" }
     };
 }
 
