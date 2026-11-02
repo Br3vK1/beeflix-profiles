@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BeeFlix Profiles Settings</title>
+<style>
+#BeeFlixAdminPage{max-width:1100px;margin:auto;padding:1.5em}
+.bf-admin-header{display:flex;align-items:center;justify-content:space-between;gap:1em;flex-wrap:wrap;margin-bottom:1.5em}
+.bf-admin-header h1{margin:0}.bf-admin-muted{opacity:.72}
+.bf-admin-toolbar{display:flex;gap:.7em;flex-wrap:wrap;margin:1em 0}
+.bf-admin-table-wrap{overflow-x:auto}
+.bf-admin-table{width:100%;border-collapse:collapse;min-width:850px}
+.bf-admin-table th,.bf-admin-table td{padding:.65em .5em;border-bottom:1px solid rgba(128,128,128,.25);text-align:left;vertical-align:middle}
+.bf-admin-table input,.bf-admin-table select,.bf-admin-form input,.bf-admin-form select,.bf-admin-form textarea{width:100%;box-sizing:border-box}
+.bf-admin-table input[type=color]{min-width:3.5em;height:2.4em;padding:0}
+.bf-admin-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1em}
+.bf-admin-field{display:flex;flex-direction:column;gap:.35em}.bf-admin-field.full{grid-column:1/-1}
+.bf-admin-form textarea{min-height:5em}
+.bf-admin-panel{padding:1em;border:1px solid rgba(128,128,128,.25);border-radius:8px;margin:1em 0}
+.bf-admin-actions{display:flex;gap:.5em;justify-content:flex-end;flex-wrap:wrap}
+.bf-admin-status{min-height:1.5em;margin:.5em 0}
+.bf-admin-badge{display:inline-block;border-radius:99px;padding:.2em .65em;font-size:.85em;background:rgba(128,128,128,.18)}
+@media(max-width:650px){.bf-admin-form{grid-template-columns:1fr}.bf-admin-field.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<div id="BeeFlixAdminPage" data-role="page" class="page type-interior pluginConfigurationPage">
+ <div data-role="content"><div class="content-primary">
+  <div class="bf-admin-header">
+   <div><h1>BeeFlix Rewards Administration</h1><p class="bf-admin-muted">Create and tune achievements and the badges members earn. Changes apply to profiles and review identity.</p></div>
+   <button is="emby-button" type="button" class="raised" id="bf-add-achievement"><span>＋ Add achievement</span></button>
+  </div>
+  <div class="bf-admin-panel">
+   <h2>Achievement definitions</h2>
+   <p class="bf-admin-muted">Movie and series milestones are evaluated against each member's existing Jellyfin playback history. IDs are permanent and cannot be changed after creation.</p>
+   <div class="bf-admin-table-wrap"><table class="bf-admin-table">
+    <thead><tr><th>Achievement</th><th>Category</th><th>Metric</th><th>Target</th><th>Rarity</th><th>Enabled</th><th>Badge preview</th><th></th></tr></thead>
+    <tbody id="bf-achievement-rows"><tr><td colspan="8">Loading settings…</td></tr></tbody>
+   </table></div>
+  </div>
+  <div class="bf-admin-actions"><button is="emby-button" type="button" class="raised button-submit" id="bf-save"><span>Save changes</span></button></div>
+  <div class="bf-admin-status" id="bf-status" role="status" aria-live="polite"></div>
+  <div class="bf-admin-panel">
+   <h2>How this works</h2>
+   <ul>
+    <li>Existing unlock records and equipped titles are preserved when definitions are renamed or disabled.</li>
+    <li>Disabled achievements stop awarding new unlocks and are hidden from the current achievement list; historical unlock records remain stored.</li>
+    <li>Changing a target can make a member eligible on the next achievement refresh. Existing unlocks are never revoked.</li>
+    <li>New definitions currently support movie counts and completed-series counts. Review, request, and community metrics can be added as those systems are implemented.</li>
+   </ul>
+  </div>
+ </div></div>
+</div>
+<script>
+(function(){
+ 'use strict';
+ const page=document.querySelector('#BeeFlixAdminPage');
+ if(!page || page.dataset.initialized==='true') return;
+ page.dataset.initialized='true';
+ const pluginId='db13b58d-c0e2-4d13-a27a-9e6b8f3b4f21';
+ const rows=page.querySelector('#bf-achievement-rows');
+ const status=page.querySelector('#bf-status');
+ let config=null;
+ let definitions=[];
+ const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+ const rarityOptions=['Common','Uncommon','Rare','Epic','Legendary'];
+ function rarityFor(metric,target){
+  const n=Number(target)||1;
+  return n >= (metric==='movies'?1000:100)?'Legendary':
+   n >= (metric==='movies'?250:25)?'Epic':
+   n >= (metric==='movies'?50:10)?'Rare':'Common';
+ }
+ function render(){
+  rows.replaceChildren();
+  if(!definitions.length){rows.innerHTML='<tr><td colspan="8">No achievements defined yet. Add one to get started.</td></tr>';return;}
+  definitions.forEach((item,index)=>{
+   const tr=document.createElement('tr');
+   tr.dataset.index=String(index);
+   tr.innerHTML=
+    '<td><input data-field="name" aria-label="Achievement name" value="'+esc(item.name)+'"></td>'+
+    '<td><input data-field="category" aria-label="Category" value="'+esc(item.category)+'"></td>'+
+    '<td><select data-field="metric"><option value="movies">Movies watched</option><option value="series">Series completed</option></select></td>'+
+    '<td><input data-field="threshold" type="number" min="1" max="1000000" value="'+esc(item.threshold)+'"></td>'+
+    '<td><select data-field="rarity">'+rarityOptions.map(v=>'<option>'+v+'</option>').join('')+'</select></td>'+
+    '<td><input data-field="enabled" type="checkbox" '+(item.enabled!==false?'checked':'')+'></td>'+
+    '<td><input data-field="badgeName" aria-label="Badge title" value="'+esc(item.badgeName||item.name)+'"><input data-field="badgeColor" type="color" aria-label="Badge color" value="'+esc(/^#[0-9a-f]{6}$/i.test(item.badgeColor||'')?item.badgeColor:'#E5C35D')+'"></td>'+
+    '<td><button is="emby-button" type="button" class="raised" data-action="edit">Details</button> <button is="emby-button" type="button" class="raised" data-action="delete">Delete</button></td>';
+   tr.querySelector('[data-field="metric"]').value=item.metric||'movies';
+   tr.querySelector('[data-field="rarity"]').value=item.rarity||rarityFor(item.metric||'movies',item.threshold);
+   tr.querySelector('[data-action="edit"]').addEventListener('click',()=>editDetails(index));
+   tr.querySelector('[data-action="delete"]').addEventListener('click',()=>removeDefinition(index));
+   tr.querySelectorAll('[data-field]').forEach(control=>control.addEventListener('change',()=>readRow(tr,index)));
+   rows.appendChild(tr);
+  });
+ }
+ function readRow(tr,index){
+  const item=definitions[index];
+  tr.querySelectorAll('[data-field]').forEach(el=>{
+   const key=el.dataset.field;
+   item[key]=el.type==='checkbox'?el.checked:(key==='threshold'?Number(el.value):el.value);
+  });
+  if(!item.rarity)item.rarity=rarityFor(item.metric,item.threshold);
+ }
+ function editDetails(index){
+  const item=definitions[index];
+  const description=window.prompt('Achievement description:',item.description||'');
+  if(description===null)return;
+  const badgeDescription=window.prompt('Badge description:',item.badgeDescription||'');
+  if(badgeDescription===null)return;
+  item.description=description.trim();
+  item.badgeDescription=badgeDescription.trim();
+  status.textContent='Details updated. Save changes to apply them.';
+ }
+ function removeDefinition(index){
+  const item=definitions[index];
+  if(!window.confirm('Disable and remove "'+item.name+'" from the active list? Existing unlock history will be preserved.'))return;
+  item.enabled=false;
+  item.retired=true;
+  render();
+  status.textContent='Achievement disabled locally. Save changes to apply.';
+ }
+ function addDefinition(){
+  const name=window.prompt('Achievement name:');
+  if(!name||!name.trim())return;
+  const id=window.prompt('Permanent ID (lowercase letters, numbers, hyphens):',name.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''));
+  if(!id)return;
+  const normalized=id.trim().toLowerCase();
+  if(!/^[a-z0-9][a-z0-9-]{2,63}$/.test(normalized)){status.textContent='ID must be 3–64 characters using lowercase letters, numbers, and hyphens.';return;}
+  if(definitions.some(x=>x.id.toLowerCase()===normalized)){status.textContent='That ID is already in use. IDs cannot be reused.';return;}
+  const metric=window.confirm('Choose OK for a movie-watched milestone. Choose Cancel for a completed-series milestone.')?'movies':'series';
+  const threshold=Number(window.prompt('Required '+(metric==='movies'?'movies watched':'series completed')+':','10'));
+  if(!Number.isInteger(threshold)||threshold<1||threshold>1000000){status.textContent='Target must be a whole number from 1 to 1,000,000.';return;}
+  definitions.push({id:normalized,name:name.trim(),description:'',category:metric==='movies'?'Movies':'TV',metric,threshold,enabled:true,rarity:rarityFor(metric,threshold),badgeName:name.trim(),badgeDescription:'A BeeFlix achievement reward.',badgeColor:'#E5C35D'});
+  render();
+  status.textContent='Achievement added. Configure its details, then save.';
+ }
+ async function load(){
+  try{
+   Dashboard.showLoadingMsg();
+   config=await ApiClient.getPluginConfiguration(pluginId);
+   definitions=Array.isArray(config.AchievementDefinitions)?config.AchievementDefinitions:[];
+   if(!definitions.length){status.textContent='No definitions found in saved configuration. The built-in defaults will be loaded on the next plugin configuration refresh.';}
+   render();
+  }catch(error){console.error('[BeeFlix Admin] Could not load configuration',error);rows.innerHTML='<tr><td colspan="8">Could not load plugin configuration. Confirm you are signed in as a Jellyfin administrator.</td></tr>';status.textContent='Configuration load failed.';}
+  finally{Dashboard.hideLoadingMsg();}
+ }
+ async function save(){
+  try{
+   rows.querySelectorAll('tr[data-index]').forEach(tr=>readRow(tr,Number(tr.dataset.index)));
+   const ids=new Set();
+   for(const item of definitions){
+    if(!item.id||ids.has(item.id.toLowerCase()))throw new Error('Achievement IDs must be unique.');
+    ids.add(item.id.toLowerCase());
+    if(!item.name?.trim()||!Number.isInteger(Number(item.threshold))||Number(item.threshold)<1)throw new Error('Every achievement needs a name and a positive whole-number target.');
+    if(!/^#[0-9a-f]{6}$/i.test(item.badgeColor||''))throw new Error('Badge colors must be valid six-digit hex colors.');
+    item.threshold=Number(item.threshold);
+    item.name=item.name.trim();item.category=(item.category||'Community').trim();
+    item.badgeName=(item.badgeName||item.name).trim();
+  }
+  config.AchievementDefinitions=definitions;
+  Dashboard.showLoadingMsg();
+  const result=await ApiClient.updatePluginConfiguration(pluginId,config);
+  Dashboard.processPluginConfigurationUpdateResult(result);
+  status.textContent='Saved. Achievement definitions and badge settings are now active.';
+  }catch(error){console.error('[BeeFlix Admin] Save failed',error);status.textContent=error.message||'Could not save settings.';}
+  finally{Dashboard.hideLoadingMsg();}
+ }
+ page.querySelector('#bf-add-achievement').addEventListener('click',addDefinition);
+ page.querySelector('#bf-save').addEventListener('click',save);
+ page.addEventListener('pageshow',load);
+ if(document.readyState!=='loading')load();
+})();
+</script>
+</body></html>
